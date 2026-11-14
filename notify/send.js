@@ -1,5 +1,6 @@
 const fs = require('fs');
-const admin = require('firebase-admin');
+const { initializeApp, cert } = require('firebase-admin/app');
+const { getMessaging } = require('firebase-admin/messaging');
 
 const file = 'out.json';
 if (!fs.existsSync(file)) {
@@ -12,13 +13,25 @@ if (!list.length) {
   process.exit(0);
 }
 
-admin.initializeApp({
-  credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)),
-});
+const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
+if (!raw) {
+  console.error('The secret FIREBASE_SERVICE_ACCOUNT is missing or empty');
+  process.exit(1);
+}
+let account;
+try {
+  account = JSON.parse(raw);
+} catch (e) {
+  console.error('The secret FIREBASE_SERVICE_ACCOUNT is not the full text of the Firebase key file');
+  process.exit(1);
+}
+
+initializeApp({ credential: cert(account) });
+const messaging = getMessaging();
 
 (async () => {
   for (const n of list) {
-    await admin.messaging().send({
+    await messaging.send({
       topic: 'bet-assist',
       notification: { title: n.title, body: n.body },
       android: { priority: 'high' },
