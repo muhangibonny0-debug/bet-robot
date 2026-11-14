@@ -1,0 +1,63 @@
+name: Robot
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_push:
+        description: 'Only send a test notification'
+        type: boolean
+        default: false
+
+concurrency:
+  group: robot
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      TZ: Africa/Kampala
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get the app code
+        uses: actions/checkout@v4
+        with:
+          repository: muhangibonny0-debug/com.bonny.bet_brain
+          token: ${{ secrets.APP_REPO_TOKEN }}
+          path: app
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Prepare
+        run: |
+          cp app/pubspec.yaml pubspec.yaml
+          rm -rf lib
+          cp -r app/lib lib
+          sed -i 's/^dev_dependencies:/dev_dependencies:\n  flutter_test:\n    sdk: flutter/' pubspec.yaml
+          flutter pub get
+
+      - name: Run the robot
+        env:
+          TEST_PUSH: ${{ inputs.test_push }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          FD_KEY: ${{ secrets.FD_KEY }}
+          AF_KEY: ${{ secrets.AF_KEY }}
+          SM_KEY: ${{ secrets.SM_KEY }}
+          OA_KEY: ${{ secrets.OA_KEY }}
+          FV_KEY: ${{ secrets.FV_KEY }}
+          TR_KEY: ${{ secrets.TR_KEY }}
+          SS_KEY: ${{ secrets.SS_KEY }}
+        run: flutter test test/robot_test.dart --reporter expanded
+
+      - name: Send notifications
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          cd notify
+          npm install firebase-admin
+          node send.js
