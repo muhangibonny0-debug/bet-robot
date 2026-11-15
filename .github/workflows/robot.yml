@@ -1,3 +1,4 @@
+
 name: Robot
 
 on:
@@ -59,7 +60,10 @@ jobs:
           SS_KEY: ${{ secrets.SS_KEY }}
           AN_KEY: ${{ secrets.AN_KEY }}
           BK_NAME: ${{ secrets.BK_NAME }}
-        run: flutter test test/robot_test.dart --reporter expanded
+        run: |
+          echo "DEBUG: PROBE=[$PROBE]"
+          echo "DEBUG: TEST_PUSH=[$TEST_PUSH]"
+          flutter test test/robot_test.dart --reporter expanded
 
       - name: Send notifications
         env:
@@ -68,3 +72,4 @@ jobs:
           cd notify
           npm install firebase-admin
           node send.js
+          
