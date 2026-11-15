@@ -1,4 +1,3 @@
-
 name: Robot
 
 on:
@@ -10,6 +9,10 @@ on:
         default: false
       probe:
         description: 'Only look at the data providers (no tickets)'
+        type: boolean
+        default: false
+      rebuild:
+        description: 'Rebuild today''s tickets now (one time, by hand)'
         type: boolean
         default: false
 
@@ -24,6 +27,12 @@ jobs:
     env:
       TZ: Africa/Kampala
     steps:
+      - name: Show the inputs
+        run: |
+          echo "DEBUG: inputs.probe=[${{ inputs.probe }}] event=[${{ github.event.inputs.probe }}]"
+          echo "DEBUG: inputs.rebuild=[${{ inputs.rebuild }}] event=[${{ github.event.inputs.rebuild }}]"
+          echo "DEBUG: inputs.test_push=[${{ inputs.test_push }}] event=[${{ github.event.inputs.test_push }}]"
+
       - uses: actions/checkout@v4
 
       - name: Get the app code
@@ -48,10 +57,9 @@ jobs:
 
       - name: Run the robot
         env:
-          TEST_PUSH: ${{ github.event.inputs.test_push }}
-          PROBE: ${{ github.event.inputs.probe }}
-          DEBUG_INPUTS: ${{ inputs.probe }}
-          DEBUG_EVENT_INPUTS: ${{ github.event.inputs.probe }}
+          TEST_PUSH: ${{ format('{0}', inputs.test_push) == 'true' || github.event.inputs.test_push == 'true' }}
+          PROBE: ${{ format('{0}', inputs.probe) == 'true' || github.event.inputs.probe == 'true' }}
+          REBUILD: ${{ format('{0}', inputs.rebuild) == 'true' || github.event.inputs.rebuild == 'true' }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           FD_KEY: ${{ secrets.FD_KEY }}
           AF_KEY: ${{ secrets.AF_KEY }}
@@ -62,12 +70,7 @@ jobs:
           SS_KEY: ${{ secrets.SS_KEY }}
           AN_KEY: ${{ secrets.AN_KEY }}
           BK_NAME: ${{ secrets.BK_NAME }}
-        run: |
-          echo "DEBUG: inputs.probe=[$DEBUG_INPUTS]"
-          echo "DEBUG: github.event.inputs.probe=[$DEBUG_EVENT_INPUTS]"
-          echo "DEBUG: PROBE=[$PROBE]"
-          echo "DEBUG: TEST_PUSH=[$TEST_PUSH]"
-          flutter test test/robot_test.dart --reporter expanded
+        run: flutter test test/robot_test.dart --reporter expanded
 
       - name: Send notifications
         env:
@@ -76,4 +79,3 @@ jobs:
           cd notify
           npm install firebase-admin
           node send.js
-          
