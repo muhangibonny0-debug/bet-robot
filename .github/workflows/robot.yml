@@ -7,6 +7,10 @@ on:
         description: 'Only send a test notification'
         type: boolean
         default: false
+      probe:
+        description: 'Only look at the data providers (no tickets)'
+        type: boolean
+        default: false
 
 concurrency:
   group: robot
@@ -44,6 +48,7 @@ jobs:
       - name: Run the robot
         env:
           TEST_PUSH: ${{ inputs.test_push }}
+          PROBE: ${{ inputs.probe }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           FD_KEY: ${{ secrets.FD_KEY }}
           AF_KEY: ${{ secrets.AF_KEY }}
@@ -52,6 +57,8 @@ jobs:
           FV_KEY: ${{ secrets.FV_KEY }}
           TR_KEY: ${{ secrets.TR_KEY }}
           SS_KEY: ${{ secrets.SS_KEY }}
+          AN_KEY: ${{ secrets.AN_KEY }}
+          BK_NAME: ${{ secrets.BK_NAME }}
         run: flutter test test/robot_test.dart --reporter expanded
 
       - name: Send notifications
