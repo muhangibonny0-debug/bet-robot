@@ -165,6 +165,11 @@ String _hhmm(int ms) {
   return '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
 }
 
+String _desc(Map<String, dynamic>? m) {
+  if (m == null) return 'none';
+  return 'made ${_hhmm(madeOf(m))} · ${legsOf(m).length} legs · ${totalOdds(m).toStringAsFixed(2)} odds · ${slipStatus(m)}';
+}
+
 // every notification is sent once. Its flag includes the ticket's creation time,
 // so a rebuilt ticket (same day) gets its own notifications.
 List<Map<String, String>> _events(String key, Map<String, dynamic> m, Map<String, dynamic> sent,
@@ -195,8 +200,13 @@ List<Map<String, String>> _events(String key, Map<String, dynamic> m, Map<String
 
   if (kind == 'vvip') {
     if (key == 'shock:$today' && fresh) {
+      // the picks are listed, so you can enter them quickly at your bookmaker
+      final picks = legs
+          .take(3)
+          .map((l) => '${l['label']} @${l['odds'] is num ? (l['odds'] as num).toStringAsFixed(2) : l['odds']}')
+          .join(' · ');
       add('$base:new', 'Today\'s VVIP Gold ticket is ready',
-          '${legs.length} ${legs.length == 1 ? 'leg' : 'legs'} · $odds odds · first kick-off ${_hhmm(firstT)}');
+          '$picks${legs.length > 3 ? ' · +${legs.length - 3} more' : ''} · total $odds · first kick-off ${_hhmm(firstT)}');
     }
     for (var i = 0; i < legs.length; i++) {
       final l = legs[i];
@@ -325,16 +335,17 @@ void main() {
 
     // 1) today's VVIP ticket
     var have = Store.raw('shock:$today');
+    Map<String, dynamic>? saved; // the old ticket, put back if a manual rebuild fails
     if (force && have != null && '${have['kind']}' == 'vvip') {
       if (have['bet'] != null) {
         print('REBUILD: today\'s VVIP has a bet on it, so it is kept');
       } else {
-        // a new ticket with a newer creation time replaces it everywhere (no old copy comes back)
+        saved = have;
         Store.data.remove('shock:$today');
         attempts[today] = 0;
         lastTry = 0;
         have = null;
-        print('REBUILD: today\'s old VVIP removed, building a new one');
+        print('REBUILD: today\'s old VVIP taken out, building a new one');
       }
     }
     if (have == null || '${have['kind']}' != 'vvip') {
@@ -355,6 +366,13 @@ void main() {
     } else {
       print('Today\'s VVIP already exists, it is kept');
     }
+    if (saved != null) {
+      final nv = Store.raw('shock:$today');
+      if (nv == null || '${nv['kind']}' != 'vvip') {
+        Store.data['shock:$today'] = saved;
+        print('REBUILD failed: the old VVIP was put back (the VVIP line above says why)');
+      }
+    }
 
     // 2) live scores and results
     await Settle.run((s) {});
@@ -371,6 +389,8 @@ void main() {
     for (final line in Silver.log) {
       print('  Silver detail: $line');
     }
+    print('Proof VVIP today: ${_desc(Store.raw('shock:$today'))}');
+    print('Proof Silver week: ${_desc(Silver.latest(week)?.value)}');
 
     // 4) notifications (a manual rebuild only looks at today's tickets)
     final events = <Map<String, String>>[];
