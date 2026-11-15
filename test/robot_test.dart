@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:bet_brain/brain/engine.dart';
 import 'package:bet_brain/brain/settle.dart';
 import 'package:bet_brain/brain/silver.dart';
+import 'package:bet_brain/core/config.dart';
 import 'package:bet_brain/core/models.dart';
 import 'package:bet_brain/core/store.dart';
 import 'package:bet_brain/core/theme.dart';
@@ -99,12 +100,38 @@ Future<void> _saveState(String? id, Map<String, dynamic> st) async {
   }
 }
 
+// was the app opened on any phone in the last 5 minutes? The apps send "open" to a free mailbox.
+Future<bool> _appOpenRecently() async {
+  if (kPresenceTopic.isEmpty) return false;
+  try {
+    final r = await http
+        .get(Uri.parse('https://ntfy.sh/$kPresenceTopic/json?poll=1&since=10m'))
+        .timeout(const Duration(seconds: 20));
+    if (r.statusCode != 200) return false;
+    final cut = DateTime.now().millisecondsSinceEpoch ~/ 1000 - 300;
+    for (final line in r.body.split('\n')) {
+      final s = line.trim();
+      if (s.isEmpty) continue;
+      try {
+        final j = jsonDecode(s);
+        if (j is Map && '${j['event']}' == 'message' && j['time'] is num && (j['time'] as num).toInt() >= cut) {
+          return true;
+        }
+      } catch (e) {
+        // skip a bad line
+      }
+    }
+  } catch (e) {
+    // no answer: treat as closed
+  }
+  return false;
+}
+
 String _hhmm(int ms) {
   final d = DateTime.fromMillisecondsSinceEpoch(ms);
   return '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
 }
 
-// every notification is sent once: its flag is saved in the robot notebook
 List<Map<String, String>> _events(String key, Map<String, dynamic> m, Map<String, dynamic> sent,
     int nowMs, bool silent, String today, bool capped) {
   final out = <Map<String, String>>[];
@@ -200,7 +227,7 @@ void main() {
     _loadKeys();
 
     if (_env('PROBE') == 'true') {
-      // only looks at the data providers and prints what they return
+      print('App open in the last 5 minutes: ${await _appOpenRecently()}');
       print(await SportScore.test());
       try {
         print(await ApiNinjas.test());
@@ -234,6 +261,10 @@ void main() {
     await Sync.pull();
     await Engine.dropBad();
 
+    // Tickets are built when you are awake: from 06:00, or at night only if the app is open
+    final awake = now.hour >= 6 || await _appOpenRecently();
+    print('Awake window: ${awake ? 'open' : 'closed (night, app not open)'}');
+
     final sid = await _stateId();
     final st = await _loadState(sid);
     final silent = st.isEmpty; // the very first run only learns, it sends nothing
@@ -257,7 +288,9 @@ void main() {
     if (have == null || '${have['kind']}' != 'vvip') {
       final n = attempts[today] is num ? (attempts[today] as num).toInt() : 0;
       final nowMs = DateTime.now().millisecondsSinceEpoch;
-      if (n < 4 && nowMs - lastTry >= 20 * 60000) {
+      if (!awake) {
+        print('VVIP waits for you (night, app not open)');
+      } else if (n < 4 && nowMs - lastTry >= 20 * 60000) {
         Store.data['fg:$today'] = n;
         st['lastTry'] = nowMs;
         final note = await Engine.autoForge();
@@ -274,10 +307,10 @@ void main() {
     // 2) live scores and results
     await Settle.run((s) {});
 
-    // 3) VIP Silver, built by the robot when the rules allow it
+    // 3) VIP Silver: same awake rule
     Silver.lastTry = sv['lastTry'] is num ? (sv['lastTry'] as num).toInt() : 0;
     Silver.triesToday = '${sv['day']}' == today && sv['tries'] is num ? (sv['tries'] as num).toInt() : 0;
-    final sNote = await Silver.autoBuild();
+    final sNote = awake ? await Silver.autoBuild() : '';
     sv['lastTry'] = Silver.lastTry;
     sv['day'] = today;
     sv['tries'] = Silver.triesToday;
