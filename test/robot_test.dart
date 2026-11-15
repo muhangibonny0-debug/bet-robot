@@ -127,14 +127,50 @@ Future<bool> _appOpenRecently() async {
   return false;
 }
 
+// proof: read the friends feed back from GitHub and list the tickets it holds
+Future<void> _verifyFeed() async {
+  try {
+    final id = Store.str('feed_id');
+    if (id.isEmpty) {
+      print('Proof: the friends feed has no gist yet');
+      return;
+    }
+    final j = await _req('GET', '/gists/$id');
+    final files = j is Map ? j['files'] : null;
+    final f = files is Map ? files['feed.json'] : null;
+    if (f is! Map) {
+      print('Proof: feed file not found');
+      return;
+    }
+    final d = jsonDecode('${f['content']}');
+    final data = d is Map ? d['data'] : null;
+    if (data is! Map) {
+      print('Proof: the feed is empty');
+      return;
+    }
+    final keys = data.keys.map((e) => '$e').toList()..sort();
+    for (final k in keys.reversed.take(4)) {
+      final m = data[k];
+      if (m is! Map) continue;
+      final mm = Map<String, dynamic>.from(m);
+      print('Proof feed: $k · ${legsOf(mm).length} legs · ${totalOdds(mm).toStringAsFixed(2)} odds · ${slipStatus(mm)}');
+    }
+  } catch (e) {
+    print('Proof: could not read the feed ($e)');
+  }
+}
+
 String _hhmm(int ms) {
   final d = DateTime.fromMillisecondsSinceEpoch(ms);
   return '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
 }
 
+// every notification is sent once. Its flag includes the ticket's creation time,
+// so a rebuilt ticket (same day) gets its own notifications.
 List<Map<String, String>> _events(String key, Map<String, dynamic> m, Map<String, dynamic> sent,
     int nowMs, bool silent, String today, bool capped) {
   final out = <Map<String, String>>[];
+  final base = '$key@${madeOf(m)}';
   void add(String flag, String title, String body) {
     if (sent.containsKey(flag)) return;
     sent[flag] = nowMs;
@@ -159,7 +195,7 @@ List<Map<String, String>> _events(String key, Map<String, dynamic> m, Map<String
 
   if (kind == 'vvip') {
     if (key == 'shock:$today' && fresh) {
-      add('$key:new', 'Today\'s VVIP Gold ticket is ready',
+      add('$base:new', 'Today\'s VVIP Gold ticket is ready',
           '${legs.length} ${legs.length == 1 ? 'leg' : 'legs'} · $odds odds · first kick-off ${_hhmm(firstT)}');
     }
     for (var i = 0; i < legs.length; i++) {
@@ -170,15 +206,15 @@ List<Map<String, String>> _events(String key, Map<String, dynamic> m, Map<String
       final a = '${l['away']}';
       final ph = '${l['ph']}';
       if (nowMs >= t && nowMs - t < 3 * 3600000 && ph != 'FT') {
-        add('$key:ko:$i', 'Kick-off: $h vs $a', '${l['label']} · odds ${l['odds']}');
+        add('$base:ko:$i', 'Kick-off: $h vs $a', '${l['label']} · odds ${l['odds']}');
       }
       if (ph == 'FT' && l['sc'] != null && nowMs - t < 10 * 3600000) {
-        add('$key:ft:$i', 'Full time: $h ${l['sc']} $a', 'Pick: ${l['label']}');
+        add('$base:ft:$i', 'Full time: $h ${l['sc']} $a', 'Pick: ${l['label']}');
       }
     }
     if (recent) {
       if (status == 'WON') {
-        add('$key:won', '🎉 VVIP Gold won!', 'VVIP Gold $odds odds. Congratulations!');
+        add('$base:won', '🎉 VVIP Gold won!', 'VVIP Gold $odds odds. Congratulations!');
       } else if (status == 'LOST') {
         var why = 'one leg did not win';
         for (final l in legs) {
@@ -187,21 +223,21 @@ List<Map<String, String>> _events(String key, Map<String, dynamic> m, Map<String
             break;
           }
         }
-        add('$key:lost', 'VVIP Gold lost', 'Lost on: $why');
+        add('$base:lost', 'VVIP Gold lost', 'Lost on: $why');
       }
     }
   } else if (kind == 'silver') {
     if (fresh) {
       final n = m['n'] is num ? (m['n'] as num).toInt() : 1;
       final until = lastT == 0 ? '' : ' · until ${_dn[DateTime.fromMillisecondsSinceEpoch(lastT).weekday - 1]}';
-      add('$key:new', n > 1 ? 'VIP Silver rebuilt (ticket $n of 3 this week)' : 'VIP Silver ticket is ready',
+      add('$base:new', n > 1 ? 'VIP Silver rebuilt (ticket $n of 3 this week)' : 'VIP Silver ticket is ready',
           '${legs.length} legs · $odds odds$until');
     }
     if (status == 'WON' && recent) {
-      add('$key:won', '🎉 VIP Silver won!', 'VIP Silver $odds odds. Congratulations!');
+      add('$base:won', '🎉 VIP Silver won!', 'VIP Silver $odds odds. Congratulations!');
     }
     if (status == 'LOST' && capped) {
-      add('$key:final', 'VIP Silver lost', 'No more Silver tickets this week. The next one starts on Monday.');
+      add('$base:final', 'VIP Silver lost', 'No more Silver tickets this week. The next one starts on Monday.');
     }
   }
   return out;
@@ -250,6 +286,7 @@ void main() {
     if (Store.gh.isEmpty) throw Exception('GH_TOKEN secret is missing');
     if (!Engine.isBuilder) throw Exception('No data key is set (FD_KEY, AF_KEY, SM_KEY or OA_KEY)');
 
+    final force = _env('REBUILD') == 'true';
     final now = DateTime.now();
     if (now.timeZoneOffset.inHours != 3) {
       throw Exception('Time zone is not Africa/Kampala (offset ${now.timeZoneOffset.inHours})');
@@ -257,22 +294,25 @@ void main() {
     final today = ymd(now);
     final yday = ymd(DateTime(now.year, now.month, now.day - 1));
     final week = Silver.weekOf(now);
+    print('Run: ${force ? 'REBUILD by hand' : 'normal'} · $today ${_hhmm(now.millisecondsSinceEpoch)} Kampala');
 
     await Sync.pull();
     await Engine.dropBad();
 
     // Tickets are built when you are awake: from 06:00, or at night only if the app is open
-    final awake = now.hour >= 6 || await _appOpenRecently();
+    final awake = force || now.hour >= 6 || await _appOpenRecently();
     print('Awake window: ${awake ? 'open' : 'closed (night, app not open)'}');
 
     final sid = await _stateId();
     final st = await _loadState(sid);
-    final silent = st.isEmpty; // the very first run only learns, it sends nothing
+    // the very first run (or the first run of this version) only learns, it sends nothing
+    final silent = (st.isEmpty || st['v'] != 2) && !force;
+    st['v'] = 2;
     final attRaw = st['attempts'];
     final attempts = attRaw is Map ? Map<String, dynamic>.from(attRaw) : <String, dynamic>{};
     final sentRaw = st['sent'];
     final sent = sentRaw is Map ? Map<String, dynamic>.from(sentRaw) : <String, dynamic>{};
-    final lastTry = st['lastTry'] is num ? (st['lastTry'] as num).toInt() : 0;
+    var lastTry = st['lastTry'] is num ? (st['lastTry'] as num).toInt() : 0;
     final svRaw = st['sv'];
     final sv = svRaw is Map ? Map<String, dynamic>.from(svRaw) : <String, dynamic>{};
 
@@ -283,8 +323,20 @@ void main() {
         ]);
     final before = snap();
 
-    // 1) today's VVIP ticket, once, never more than 4 tries a day and 20 minutes apart
-    final have = Store.raw('shock:$today');
+    // 1) today's VVIP ticket
+    var have = Store.raw('shock:$today');
+    if (force && have != null && '${have['kind']}' == 'vvip') {
+      if (have['bet'] != null) {
+        print('REBUILD: today\'s VVIP has a bet on it, so it is kept');
+      } else {
+        // a new ticket with a newer creation time replaces it everywhere (no old copy comes back)
+        Store.data.remove('shock:$today');
+        attempts[today] = 0;
+        lastTry = 0;
+        have = null;
+        print('REBUILD: today\'s old VVIP removed, building a new one');
+      }
+    }
     if (have == null || '${have['kind']}' != 'vvip') {
       final n = attempts[today] is num ? (attempts[today] as num).toInt() : 0;
       final nowMs = DateTime.now().millisecondsSinceEpoch;
@@ -298,29 +350,32 @@ void main() {
         attempts[today] = after is num ? after.toInt() : n;
         print('VVIP: $note');
       } else {
-        print('VVIP skipped (tries today: $n)');
+        print('VVIP skipped (tries today: $n, last try ${(nowMs - lastTry) ~/ 60000} min ago)');
       }
     } else {
-      print('Today\'s VVIP already exists');
+      print('Today\'s VVIP already exists, it is kept');
     }
 
     // 2) live scores and results
     await Settle.run((s) {});
 
     // 3) VIP Silver: same awake rule
-    Silver.lastTry = sv['lastTry'] is num ? (sv['lastTry'] as num).toInt() : 0;
-    Silver.triesToday = '${sv['day']}' == today && sv['tries'] is num ? (sv['tries'] as num).toInt() : 0;
-    final sNote = awake ? await Silver.autoBuild() : '';
+    Silver.lastTry = force ? 0 : (sv['lastTry'] is num ? (sv['lastTry'] as num).toInt() : 0);
+    Silver.triesToday = force ? 0 : ('${sv['day']}' == today && sv['tries'] is num ? (sv['tries'] as num).toInt() : 0);
+    final sNote = awake ? await Silver.autoBuild(force: force) : 'VIP Silver: waits for you (night, app not open)';
     sv['lastTry'] = Silver.lastTry;
     sv['day'] = today;
     sv['tries'] = Silver.triesToday;
     st['sv'] = sv;
-    print('Silver: ${sNote.isEmpty ? 'nothing due' : sNote}');
+    print('Silver: $sNote');
+    for (final line in Silver.log) {
+      print('  Silver detail: $line');
+    }
 
-    // 4) notifications
+    // 4) notifications (a manual rebuild only looks at today's tickets)
     final events = <Map<String, String>>[];
     final nowMs = DateTime.now().millisecondsSinceEpoch;
-    for (final k in ['shock:$yday', 'shock:$today']) {
+    for (final k in force ? ['shock:$today'] : ['shock:$yday', 'shock:$today']) {
       final m = Store.raw(k);
       if (m == null || '${m['kind']}' != 'vvip') continue;
       events.addAll(_events(k, m, sent, nowMs, silent, today, false));
@@ -331,12 +386,16 @@ void main() {
       events.addAll(_events(sl.key, sl.value, sent, nowMs, silent, today, capped));
     }
 
-    // 5) publish for the phones, only when something changed
-    if (snap() != before) {
+    // 5) publish for the phones, only when something changed (or after a manual rebuild)
+    final changed = snap() != before;
+    if (changed || force) {
       await Sync.pull();
       await Sync.push();
       await Feed.publish();
-      print('Published');
+      print('Published: yes');
+      await _verifyFeed();
+    } else {
+      print('Published: nothing changed');
     }
 
     // 6) save the notebook and the notification list
