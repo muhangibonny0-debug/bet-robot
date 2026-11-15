@@ -54,7 +54,6 @@ jobs:
           DEBUG_EVENT_INPUTS: ${{ github.event.inputs.probe }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           FD_KEY: ${{ secrets.FD_KEY }}
-          FD_KEY: ${{ secrets.FD_KEY }}
           AF_KEY: ${{ secrets.AF_KEY }}
           SM_KEY: ${{ secrets.SM_KEY }}
           OA_KEY: ${{ secrets.OA_KEY }}
