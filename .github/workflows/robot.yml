@@ -70,6 +70,7 @@ jobs:
           SS_KEY: ${{ secrets.SS_KEY }}
           AN_KEY: ${{ secrets.AN_KEY }}
           BK_NAME: ${{ secrets.BK_NAME }}
+          GM_KEY: ${{ secrets.GM_KEY }}
         run: flutter test test/robot_test.dart --reporter expanded
 
       - name: Send notifications
