@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
@@ -24,7 +25,7 @@ String _env(String k) => (Platform.environment[k] ?? '').trim();
 void _loadKeys() {
   const map = {
     'GH_TOKEN': 'gh', 'FD_KEY': 'fd', 'AF_KEY': 'af', 'SM_KEY': 'sm', 'OA_KEY': 'oa',
-    'FV_KEY': 'fv', 'TR_KEY': 'tr', 'SS_KEY': 'ss', 'AN_KEY': 'an', 'BK_NAME': 'bk',
+    'FV_KEY': 'fv', 'TR_KEY': 'tr', 'SS_KEY': 'ss', 'AN_KEY': 'an', 'BK_NAME': 'bk', 'GM_KEY': 'gm',
   };
   map.forEach((e, k) {
     final v = _env(e);
@@ -127,6 +128,35 @@ Future<bool> _appOpenRecently() async {
   return false;
 }
 
+// how much of the free data allowance is left: the usual reason a ticket cannot be built
+Future<void> _quota() async {
+  try {
+    if (Store.oa.isNotEmpty) {
+      final r = await http
+          .get(Uri.parse('https://api.the-odds-api.com/v4/sports/?apiKey=${Store.oa}'))
+          .timeout(const Duration(seconds: 20));
+      print('Quota: Odds API credits left ${r.headers['x-requests-remaining'] ?? '?'} '
+          '(used ${r.headers['x-requests-used'] ?? '?'}) HTTP ${r.statusCode}');
+    } else {
+      print('Quota: no Odds API key');
+    }
+  } catch (e) {
+    print('Quota: Odds API check failed ($e)');
+  }
+  try {
+    if (Store.af.isNotEmpty) {
+      final r = await http
+          .get(Uri.parse('https://v3.football.api-sports.io/status'), headers: {'x-apisports-key': Store.af})
+          .timeout(const Duration(seconds: 20));
+      final j = jsonDecode(r.body);
+      final q = j is Map && j['response'] is Map ? (j['response'] as Map)['requests'] : null;
+      print('Quota: API-Football used ${q is Map ? q['current'] : '?'} of ${q is Map ? q['limit_day'] : '?'} today');
+    }
+  } catch (e) {
+    print('Quota: API-Football check failed ($e)');
+  }
+}
+
 // proof: read the friends feed back from GitHub and list the tickets it holds
 Future<void> _verifyFeed() async {
   try {
@@ -153,7 +183,7 @@ Future<void> _verifyFeed() async {
       final m = data[k];
       if (m is! Map) continue;
       final mm = Map<String, dynamic>.from(m);
-      print('Proof feed: $k · ${legsOf(mm).length} legs · ${totalOdds(mm).toStringAsFixed(2)} odds · ${slipStatus(mm)}');
+      print('Proof feed: $k · ${legsOf(mm).length} legs · ${totalOdds(mm).toStringAsFixed(2)} odds · ${slipStatus(mm)} · booking ${mm['bk'] is Map ? ((mm['bk'] as Map)['code'] ?? (mm['bk'] as Map)['err'] ?? 'link') : 'none'}');
     }
   } catch (e) {
     print('Proof: could not read the feed ($e)');
@@ -170,12 +200,109 @@ String _desc(Map<String, dynamic>? m) {
   return 'made ${_hhmm(madeOf(m))} · ${legsOf(m).length} legs · ${totalOdds(m).toStringAsFixed(2)} odds · ${slipStatus(m)}';
 }
 
+// a ticket the bot can still book: nothing has started yet
+bool _upcoming(Map<String, dynamic> m) {
+  if (slipStatus(m) != 'PENDING') return false;
+  final nowMs = DateTime.now().millisecondsSinceEpoch;
+  for (final l in legsOf(m)) {
+    final t = l['t'] is num ? (l['t'] as num).toInt() : 0;
+    if (l['st'] != 'p' || t < nowMs + 10 * 60000) return false;
+  }
+  return true;
+}
+
+bool _hasCode(Map<String, dynamic> m) {
+  final b = m['bk'];
+  return b is Map && ('${b['code'] ?? ''}${b['link'] ?? ''}').isNotEmpty;
+}
+
+// BangBet booking by the guest bot (bot/bot.js). All or nothing: no link means the ticket was not booked.
+Future<void> _book(List<MapEntry<String, Map<String, dynamic>>> items) async {
+  if (items.isEmpty || _env('BOT_OFF') == 'true') return;
+  Directory('bot/out').createSync(recursive: true);
+  final input = {
+    'tickets': [
+      for (final e in items)
+        {
+          'key': e.key,
+          'legs': [
+            for (final l in legsOf(e.value))
+              {
+                'home': l['home'], 'away': l['away'], 't': l['t'], 'mk': l['mk'], 'sel': l['sel'],
+                'line': l['line'], 'odds': l['odds'], 'label': l['label'], 'league': l['league'], 'sp': l['sp'],
+              }
+          ]
+        }
+    ]
+  };
+  File('bot/in.json').writeAsStringSync(jsonEncode(input));
+  File('bot/out/result.json').writeAsStringSync('{"tickets":[]}');
+  print('Booking: ${items.length} ticket(s) to BangBet as a guest (no login, no bet is placed)');
+  try {
+    final inst = await Process.run('bash', [
+      '-c',
+      'cd bot && npm install playwright --no-audit --no-fund >/dev/null 2>&1; npx playwright install --with-deps chromium >/dev/null 2>&1; echo browser-ready'
+    ]).timeout(const Duration(minutes: 6));
+    print('Booking: ${'${inst.stdout}'.trim()}');
+    final r = await Process.run('node', ['bot/bot.js', 'book', 'bot/in.json', 'bot/out/result.json'])
+        .timeout(const Duration(minutes: 11));
+    final lines = '${r.stdout}'.split('\n').where((s) => s.trim().isNotEmpty).toList();
+    for (final s in lines.skip(lines.length > 60 ? lines.length - 60 : 0)) {
+      print(s);
+    }
+    final err = '${r.stderr}'.trim();
+    if (err.isNotEmpty) print('Bot errors: ${err.split('\n').take(8).join(' | ')}');
+  } on TimeoutException {
+    print('Booking: the bot took too long and was stopped');
+  } catch (e) {
+    print('Booking: $e');
+  }
+  final f = File('bot/out/result.json');
+  if (!f.existsSync()) {
+    print('Booking: no result file');
+    return;
+  }
+  final nowMs = DateTime.now().millisecondsSinceEpoch;
+  try {
+    final j = jsonDecode(f.readAsStringSync());
+    final ts = j is Map ? j['tickets'] : null;
+    if (ts is! List) return;
+    for (final t in ts) {
+      if (t is! Map) continue;
+      final m = Store.raw('${t['key']}');
+      if (m == null) continue;
+      final ok = t['ok'] == true && ('${t['code'] ?? ''}${t['link'] ?? ''}').isNotEmpty;
+      if (ok) {
+        m['bk'] = {'code': '${t['code'] ?? ''}', 'link': '${t['link'] ?? ''}', 'n': t['added'], 'odds': t['total'], 'at': nowMs};
+        print('Booking OK: ${t['key']} code ${t['code']} link ${t['link']}');
+      } else {
+        m['bk'] = {'err': '${t['why'] ?? 'unknown reason'}'};
+        print('Booking not made: ${t['key']}: ${t['why']}');
+      }
+    }
+  } catch (e) {
+    print('Booking: could not read the result ($e)');
+  }
+}
+
+// the BangBet link and code, added to the notification text
+String _bkLine(Map<String, dynamic> m) {
+  final b = m['bk'];
+  if (b is! Map) return '';
+  final link = '${b['link'] ?? ''}';
+  final code = '${b['code'] ?? ''}';
+  if (link.isNotEmpty) return '\nBangBet: $link${code.isNotEmpty ? ' (code $code)' : ''}';
+  if (code.isNotEmpty) return '\nBangBet code: $code';
+  return '';
+}
+
 // every notification is sent once. Its flag includes the ticket's creation time,
 // so a rebuilt ticket (same day) gets its own notifications.
 List<Map<String, String>> _events(String key, Map<String, dynamic> m, Map<String, dynamic> sent,
     int nowMs, bool silent, String today, bool capped) {
   final out = <Map<String, String>>[];
   final base = '$key@${madeOf(m)}';
+  final newBefore = sent.containsKey('$base:new');
   void add(String flag, String title, String body) {
     if (sent.containsKey(flag)) return;
     sent[flag] = nowMs;
@@ -197,16 +324,16 @@ List<Map<String, String>> _events(String key, Map<String, dynamic> m, Map<String
   final fresh = nowMs - madeOf(m) < 12 * 3600000;
   final status = slipStatus(m);
   final recent = lastT != 0 && nowMs - lastT < 12 * 3600000;
+  final bk = _bkLine(m);
 
   if (kind == 'vvip') {
     if (key == 'shock:$today' && fresh) {
-      // the picks are listed, so you can enter them quickly at your bookmaker
       final picks = legs
           .take(3)
           .map((l) => '${l['label']} @${l['odds'] is num ? (l['odds'] as num).toStringAsFixed(2) : l['odds']}')
           .join(' · ');
       add('$base:new', 'Today\'s VVIP Gold ticket is ready',
-          '$picks${legs.length > 3 ? ' · +${legs.length - 3} more' : ''} · total $odds · first kick-off ${_hhmm(firstT)}');
+          '$picks${legs.length > 3 ? ' · +${legs.length - 3} more' : ''} · total $odds · first kick-off ${_hhmm(firstT)}$bk');
     }
     for (var i = 0; i < legs.length; i++) {
       final l = legs[i];
@@ -241,13 +368,21 @@ List<Map<String, String>> _events(String key, Map<String, dynamic> m, Map<String
       final n = m['n'] is num ? (m['n'] as num).toInt() : 1;
       final until = lastT == 0 ? '' : ' · until ${_dn[DateTime.fromMillisecondsSinceEpoch(lastT).weekday - 1]}';
       add('$base:new', n > 1 ? 'VIP Silver rebuilt (ticket $n of 3 this week)' : 'VIP Silver ticket is ready',
-          '${legs.length} legs · $odds odds$until');
+          '${legs.length} legs · $odds odds$until$bk');
     }
     if (status == 'WON' && recent) {
       add('$base:won', '🎉 VIP Silver won!', 'VIP Silver $odds odds. Congratulations!');
     }
     if (status == 'LOST' && capped) {
       add('$base:final', 'VIP Silver lost', 'No more Silver tickets this week. The next one starts on Monday.');
+    }
+  }
+  // a booking made later than the "ready" message is announced once, on its own
+  if (bk.isNotEmpty && !sent.containsKey('$base:bk')) {
+    if (newBefore) {
+      add('$base:bk', 'BangBet booking ready', '${kind == 'silver' ? 'VIP Silver' : 'VVIP Gold'}$bk');
+    } else {
+      sent['$base:bk'] = nowMs;
     }
   }
   return out;
@@ -268,12 +403,17 @@ void main() {
       return;
     }
     File('notify/out.json').writeAsStringSync('[]');
+    if (_env('DISCOVER') == 'true') {
+      print('Discover run: the tickets are not touched');
+      return;
+    }
 
     Store.onChange = () {};
     _loadKeys();
 
     if (_env('PROBE') == 'true') {
       print('App open in the last 5 minutes: ${await _appOpenRecently()}');
+      await _quota();
       print(await SportScore.test());
       try {
         print(await ApiNinjas.test());
@@ -297,26 +437,28 @@ void main() {
     if (!Engine.isBuilder) throw Exception('No data key is set (FD_KEY, AF_KEY, SM_KEY or OA_KEY)');
 
     final force = _env('REBUILD') == 'true';
+    final bookNow = _env('BOOK_NOW') == 'true';
     final now = DateTime.now();
+    final runStart = now.millisecondsSinceEpoch;
     if (now.timeZoneOffset.inHours != 3) {
       throw Exception('Time zone is not Africa/Kampala (offset ${now.timeZoneOffset.inHours})');
     }
     final today = ymd(now);
     final yday = ymd(DateTime(now.year, now.month, now.day - 1));
     final week = Silver.weekOf(now);
-    print('Run: ${force ? 'REBUILD by hand' : 'normal'} · $today ${_hhmm(now.millisecondsSinceEpoch)} Kampala');
+    print('Run: ${force ? 'REBUILD by hand' : (bookNow ? 'BOOK NOW by hand' : 'normal')} · $today ${_hhmm(runStart)} Kampala');
+    await _quota();
 
     await Sync.pull();
     await Engine.dropBad();
 
     // Tickets are built when you are awake: from 06:00, or at night only if the app is open
-    final awake = force || now.hour >= 6 || await _appOpenRecently();
+    final awake = force || bookNow || now.hour >= 6 || await _appOpenRecently();
     print('Awake window: ${awake ? 'open' : 'closed (night, app not open)'}');
 
     final sid = await _stateId();
     final st = await _loadState(sid);
-    // the very first run (or the first run of this version) only learns, it sends nothing
-    final silent = (st.isEmpty || st['v'] != 2) && !force;
+    final silent = (st.isEmpty || st['v'] != 2) && !force && !bookNow;
     st['v'] = 2;
     final attRaw = st['attempts'];
     final attempts = attRaw is Map ? Map<String, dynamic>.from(attRaw) : <String, dynamic>{};
@@ -333,9 +475,9 @@ void main() {
         ]);
     final before = snap();
 
-    // 1) today's VVIP ticket
+    // 1) today's VVIP ticket (a "book now" run never builds anything)
     var have = Store.raw('shock:$today');
-    Map<String, dynamic>? saved; // the old ticket, put back if a manual rebuild fails
+    Map<String, dynamic>? saved;
     if (force && have != null && '${have['kind']}' == 'vvip') {
       if (have['bet'] != null) {
         print('REBUILD: today\'s VVIP has a bet on it, so it is kept');
@@ -348,7 +490,9 @@ void main() {
         print('REBUILD: today\'s old VVIP taken out, building a new one');
       }
     }
-    if (have == null || '${have['kind']}' != 'vvip') {
+    if (bookNow) {
+      print('BOOK NOW: no ticket is built in this run');
+    } else if (have == null || '${have['kind']}' != 'vvip') {
       final n = attempts[today] is num ? (attempts[today] as num).toInt() : 0;
       final nowMs = DateTime.now().millisecondsSinceEpoch;
       if (!awake) {
@@ -380,7 +524,9 @@ void main() {
     // 3) VIP Silver: same awake rule
     Silver.lastTry = force ? 0 : (sv['lastTry'] is num ? (sv['lastTry'] as num).toInt() : 0);
     Silver.triesToday = force ? 0 : ('${sv['day']}' == today && sv['tries'] is num ? (sv['tries'] as num).toInt() : 0);
-    final sNote = awake ? await Silver.autoBuild(force: force) : 'VIP Silver: waits for you (night, app not open)';
+    final sNote = bookNow
+        ? 'VIP Silver: not built in a book-now run'
+        : (awake ? await Silver.autoBuild(force: force) : 'VIP Silver: waits for you (night, app not open)');
     sv['lastTry'] = Silver.lastTry;
     sv['day'] = today;
     sv['tries'] = Silver.triesToday;
@@ -389,13 +535,28 @@ void main() {
     for (final line in Silver.log) {
       print('  Silver detail: $line');
     }
+
+    // 4) BangBet booking for the tickets built in this run (or, by hand, for the current ones)
+    final toBook = <MapEntry<String, Map<String, dynamic>>>[];
+    bool wants(Map<String, dynamic> m) =>
+        _upcoming(m) && (bookNow ? !_hasCode(m) : (madeOf(m) >= runStart && m['bk'] == null));
+    final v1 = Store.raw('shock:$today');
+    if (v1 != null && '${v1['kind']}' == 'vvip' && wants(v1)) toBook.add(MapEntry('shock:$today', v1));
+    final s1 = Silver.latest(week);
+    if (s1 != null && wants(s1.value)) toBook.add(MapEntry(s1.key, s1.value));
+    if (toBook.isEmpty) {
+      print('Booking: nothing to book in this run');
+    } else {
+      await _book(toBook);
+    }
+
     print('Proof VVIP today: ${_desc(Store.raw('shock:$today'))}');
     print('Proof Silver week: ${_desc(Silver.latest(week)?.value)}');
 
-    // 4) notifications (a manual rebuild only looks at today's tickets)
+    // 5) notifications (a manual run only looks at today's tickets)
     final events = <Map<String, String>>[];
     final nowMs = DateTime.now().millisecondsSinceEpoch;
-    for (final k in force ? ['shock:$today'] : ['shock:$yday', 'shock:$today']) {
+    for (final k in (force || bookNow) ? ['shock:$today'] : ['shock:$yday', 'shock:$today']) {
       final m = Store.raw(k);
       if (m == null || '${m['kind']}' != 'vvip') continue;
       events.addAll(_events(k, m, sent, nowMs, silent, today, false));
@@ -406,9 +567,9 @@ void main() {
       events.addAll(_events(sl.key, sl.value, sent, nowMs, silent, today, capped));
     }
 
-    // 5) publish for the phones, only when something changed (or after a manual rebuild)
+    // 6) publish for the phones, only when something changed (or after a manual run)
     final changed = snap() != before;
-    if (changed || force) {
+    if (changed || force || bookNow) {
       await Sync.pull();
       await Sync.push();
       await Feed.publish();
@@ -418,7 +579,7 @@ void main() {
       print('Published: nothing changed');
     }
 
-    // 6) save the notebook and the notification list
+    // 7) save the notebook and the notification list
     final cutDay = ymd(DateTime(now.year, now.month, now.day - 8));
     attempts.removeWhere((k, v) => k.compareTo(cutDay) < 0);
     sent.removeWhere((k, v) => k.length > 16 && k.substring(6, 16).compareTo(cutDay) < 0);
