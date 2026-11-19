@@ -8,11 +8,19 @@ on:
         type: boolean
         default: false
       probe:
-        description: 'Only look at the data providers (no tickets)'
+        description: 'Only look at the data providers and the quota (no tickets)'
         type: boolean
         default: false
       rebuild:
         description: 'Rebuild today''s tickets now (one time, by hand)'
+        type: boolean
+        default: false
+      discover:
+        description: 'Only look at the BangBet site (pictures and log, no tickets)'
+        type: boolean
+        default: false
+      book_now:
+        description: 'Make the BangBet booking for the tickets that exist now'
         type: boolean
         default: false
 
@@ -23,15 +31,13 @@ concurrency:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     env:
       TZ: Africa/Kampala
     steps:
       - name: Show the inputs
         run: |
-          echo "DEBUG: inputs.probe=[${{ inputs.probe }}] event=[${{ github.event.inputs.probe }}]"
-          echo "DEBUG: inputs.rebuild=[${{ inputs.rebuild }}] event=[${{ github.event.inputs.rebuild }}]"
-          echo "DEBUG: inputs.test_push=[${{ inputs.test_push }}] event=[${{ github.event.inputs.test_push }}]"
+          echo "DEBUG: probe=[${{ inputs.probe }}] rebuild=[${{ inputs.rebuild }}] discover=[${{ inputs.discover }}] book_now=[${{ inputs.book_now }}] test_push=[${{ inputs.test_push }}]"
 
       - uses: actions/checkout@v4
 
@@ -55,11 +61,24 @@ jobs:
           sed -i 's/^dev_dependencies:/dev_dependencies:\n  flutter_test:\n    sdk: flutter/' pubspec.yaml
           flutter pub get
 
+      - name: Look at the BangBet site (discover)
+        if: ${{ inputs.discover }}
+        env:
+          BOT_PROXY: ${{ secrets.BOT_PROXY }}
+        run: |
+          cd bot
+          npm install playwright --no-audit --no-fund
+          npx playwright install --with-deps chromium
+          node bot.js discover
+
       - name: Run the robot
         env:
           TEST_PUSH: ${{ format('{0}', inputs.test_push) == 'true' || github.event.inputs.test_push == 'true' }}
           PROBE: ${{ format('{0}', inputs.probe) == 'true' || github.event.inputs.probe == 'true' }}
           REBUILD: ${{ format('{0}', inputs.rebuild) == 'true' || github.event.inputs.rebuild == 'true' }}
+          DISCOVER: ${{ format('{0}', inputs.discover) == 'true' || github.event.inputs.discover == 'true' }}
+          BOOK_NOW: ${{ format('{0}', inputs.book_now) == 'true' || github.event.inputs.book_now == 'true' }}
+          BOT_PROXY: ${{ secrets.BOT_PROXY }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           FD_KEY: ${{ secrets.FD_KEY }}
           AF_KEY: ${{ secrets.AF_KEY }}
@@ -80,3 +99,12 @@ jobs:
           cd notify
           npm install firebase-admin
           node send.js
+
+      - name: Save the bot pictures and log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bot-out
+          path: bot/out
+          if-no-files-found: ignore
+          retention-days: 1
