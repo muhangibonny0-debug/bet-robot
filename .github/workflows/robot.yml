@@ -73,6 +73,7 @@ jobs:
 
       - name: Run the robot
         env:
+          BOT_OFF: 'true'
           TEST_PUSH: ${{ format('{0}', inputs.test_push) == 'true' || github.event.inputs.test_push == 'true' }}
           PROBE: ${{ format('{0}', inputs.probe) == 'true' || github.event.inputs.probe == 'true' }}
           REBUILD: ${{ format('{0}', inputs.rebuild) == 'true' || github.event.inputs.rebuild == 'true' }}
