@@ -1,0 +1,56 @@
+name: Research
+
+on:
+  workflow_dispatch:
+    inputs:
+      job_id:
+        description: 'Job id'
+        required: true
+      job:
+        description: 'Job as JSON'
+        required: true
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      TZ: Africa/Kampala
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install the browser
+        run: |
+          cd research
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+
+      - name: Research
+        env:
+          JOB_ID: ${{ inputs.job_id }}
+          JOB: ${{ inputs.job }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          BOT_PROXY: ${{ secrets.BOT_PROXY }}
+        run: node research/run.js
+
+      - name: Send notifications
+        if: always()
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          cd notify
+          npm install firebase-admin
+          node send.js
+
+      - name: Save the pictures and summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: research-out
+          path: research/out
+          if-no-files-found: ignore
+          retention-days: 2
