@@ -278,7 +278,7 @@ class Site {
         for (const re of [/^today$/i, /^tomorrow$/i]) {
           if (await this.clickText(page, re)) { await sleep(1500); await this.collect(page, add); }
         }
-        if (req.scope === 'week' || req.scope === 'weekend') {
+        if (['week','weekend','next3days','next7days'].includes(req.scope)) {
           const labels = await page.evaluate(() => Array.from(document.querySelectorAll('*'))
             .filter((e) => e.children.length === 0).map((e) => (e.innerText || '').trim())
             .filter((t) => t.length < 20 && /^(mon|tue|wed|thu|fri|sat|sun)[a-z]*[ .,]*\d{1,2}/i.test(t))).catch(() => []);

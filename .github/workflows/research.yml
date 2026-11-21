@@ -10,6 +10,10 @@ on:
         description: 'Job as JSON'
         required: true
 
+concurrency:
+  group: betbrain-research
+  cancel-in-progress: false
+
 jobs:
   run:
     runs-on: ubuntu-latest
