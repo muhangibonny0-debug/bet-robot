@@ -241,7 +241,7 @@ class Site {
   async collectVisible(page, add) {
     const rows = await page.evaluate(ROWS_JS).catch(() => []);
     for (const r of rows) {
-      const parts = String(r.league || '').split(/\\s*[·\\-|>/]\\s*/).filter(Boolean);
+      const parts = String(r.league || '').split(/\s*[·\\-|>/]\s*/).filter(Boolean);
       add({ home: r.home, away: r.away, ts: parseWhen(r.date, r.time), id: '', url: r.href || '',
         league: parts.length ? parts[parts.length - 1] : '', country: parts.length > 1 ? parts[0] : '', odds: r.odds || [] });
     }
@@ -253,10 +253,10 @@ class Site {
     const choices = {
       today: [/^today$/i],
       tomorrow: [/^tomorrow$/i],
-      next3days: [/^next\\s*3\\s*days?$/i, /^next\\s*three\\s*days?$/i],
-      next7days: [/^next\\s*7\\s*days?$/i, /^next\\s*seven\\s*days?$/i, /^week$/i],
-      week: [/^next\\s*7\\s*days?$/i, /^next\\s*seven\\s*days?$/i, /^week$/i],
-      weekend: [/^weekend$/i, /^this\\s*weekend$/i],
+      next3days: [/^next\s*3\s*days?$/i, /^next\s*three\s*days?$/i],
+      next7days: [/^next\s*7\s*days?$/i, /^next\s*seven\s*days?$/i, /^week$/i],
+      week: [/^next\s*7\s*days?$/i, /^next\s*seven\s*days?$/i, /^week$/i],
+      weekend: [/^weekend$/i, /^this\s*weekend$/i],
     };
     const wanted = choices[scope] || choices.today;
     const time = page.getByText(/^time$/i);
@@ -280,7 +280,7 @@ class Site {
       }
     }
     const visible = await page.evaluate(() => (document.body?.innerText || '').slice(0, 1800)).catch(() => '');
-    throw new Error('BangBet Time selector opened, but the requested period "' + scope + '" was not available. Visible options: ' + visible.replace(/\\s+/g, ' ').slice(0, 500));
+    throw new Error('BangBet Time selector opened, but the requested period "' + scope + '" was not available. Visible options: ' + visible.replace(/\s+/g, ' ').slice(0, 500));
   }
 
   async discover(req, deadline) {
