@@ -20,15 +20,47 @@ async function addLeg(site, page, leg) {
   return { ok: true, odds: m.odds, changed: Math.abs(m.odds - leg.odds) > 0.005 };
 }
 
-async function share(site, page) {
-  const out = { code: '', link: '' };
+function verifySlipText(text, legs) {
+  const body = norm(text);
+  const missing = legs.filter((leg) =>
+    !body.includes(norm(leg.home)) ||
+    !body.includes(norm(leg.away)) ||
+    !body.includes(norm(leg.outcome)));
+  return { ok: missing.length === 0, missing };
+}
+
+async function share(site, page, legs) {
+  const out = { code: '', link: '', why: '' };
+  let opened = false;
   for (const sel of ['[class*="slip" i]:visible', '[class*="cart" i]:visible']) {
     try {
       const el = page.locator(sel).first();
-      if ((await el.count()) && (await el.isVisible())) { await el.click({ timeout: 2000 }); await sleep(1200); break; }
-    } catch (e) { /* ignore */ }
+      if ((await el.count()) && (await el.isVisible())) {
+        await el.click({ timeout: 2000 });
+        await sleep(1200);
+        opened = true;
+        break;
+      }
+    } catch (e) { /* try another betslip selector */ }
   }
-  await site.shot(page, 'book_slip');
+  if (!opened) {
+    try {
+      const el = page.getByText(/bet\\s*slip/i).first();
+      if ((await el.count()) && (await el.isVisible())) {
+        await el.click({ timeout: 2000 });
+        await sleep(1200);
+        opened = true;
+      }
+    } catch (e) { /* betslip panel not available */ }
+  }
+  if (!opened) return { ...out, why: 'BangBet betslip panel could not be opened; no booking code was requested.' };
+  const slipText = await page.evaluate(() => document.body.innerText).catch(() => '');
+  const verified = verifySlipText(slipText, legs);
+  if (!verified.ok) {
+    const names = verified.missing.map((l) => l.home + ' v ' + l.away).join(', ');
+    return { ...out, why: 'Betslip verification failed; these selections were not visible in the slip: ' + names };
+  }
+  await site.shot(page, 'book_slip_verified');
   const mark = page.net.length;
   for (const re of [/book(ing)?\s*(a\s*)?bet/i, /booking\s*code/i, /generate\s*code/i, /share/i, /\bbook\b/i]) {
     try {
@@ -41,14 +73,14 @@ async function share(site, page) {
   const hay = [text, ...vals].join('\n');
   const u = hay.match(/https?:\/\/[^\s"'<>]*bangbet[^\s"'<>]*/i);
   if (u) out.link = u[0];
-  const c = hay.match(/[Cc]ode\s*[:-]?\s*([A-Z0-9]{4,10})\b/);
+  const c = hay.match(/(?:booking|bet|share)\s*code\s*[:-]?\s*([A-Z0-9]{4,10})\b/i);
   if (c) out.code = c[1];
   for (const r of page.net.slice(mark)) {
     walk(r.body, (o) => {
       for (const k of Object.keys(o)) {
         const v = o[k];
         if (typeof v !== 'string') continue;
-        if (/code/i.test(k) && /^[A-Za-z0-9]{4,10}$/.test(v) && !out.code) out.code = v.toUpperCase();
+        if (/^(booking|bet|share)_?code$/i.test(k) && /^[A-Za-z0-9]{4,10}$/.test(v) && !out.code) out.code = v.toUpperCase();
         if (/(link|url)/i.test(k) && /bangbet/i.test(v) && !out.link) out.link = v;
       }
     });
@@ -71,11 +103,11 @@ async function book(site, legs, deadline) {
       if (r.changed) res.changes.push(`${leg.home} v ${leg.away}: ${leg.odds} to ${r.odds}`);
     }
     if (res.added === legs.length) {
-      const s = await share(site, page);
+      const s = await share(site, page, legs);
       res.code = s.code;
       res.link = s.link;
-      res.ok = !!(s.code || s.link);
-      if (!res.ok) res.why = 'every selection was added, but no code or link could be read after pressing share';
+      res.ok = !!s.code;
+      if (!res.ok) res.why = s.why || 'every selection was added, but BangBet did not return a booking code. A share link alone is not confirmation.';
     } else if (!res.why) res.why = `${res.added} of ${legs.length} selections added`;
   } finally {
     await page.close().catch(() => {});
@@ -84,4 +116,4 @@ async function book(site, legs, deadline) {
   return res;
 }
 
-module.exports = { book };
+module.exports = { book, verifySlipText };

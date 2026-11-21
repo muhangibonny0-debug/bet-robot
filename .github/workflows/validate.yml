@@ -23,7 +23,7 @@ jobs:
       - name: Check out BetBrain app source
         uses: actions/checkout@v4
         with:
-          repository: muhangibonny0-debug/com.bonny.bet_brain
+          repository: muhangibonny257-dev/com.bonny.bet_brain
           token: ${{ secrets.APP_REPO_TOKEN }}
           path: app
 
@@ -49,6 +49,7 @@ jobs:
           node --check research/lib/util.js
           node --check research/lib/analyze.js
           node --check research/lib/ticket.js
+          node --check research/lib/book.js
           node --test research/test/selection.test.js
 
       - name: Compile and run the robot test in safe test-push mode

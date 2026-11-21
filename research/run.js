@@ -13,11 +13,11 @@ const job = JSON.parse(process.env.JOB || '{}');
 const ID = process.env.JOB_ID || job.id || 'manual';
 const P = job.params || job;
 const req = {
-  sports: Array.isArray(P.sports) && P.sports.length ? P.sports : ['football'],
+  sports: Array.isArray(P.sports) ? P.sports : [],
   scope: P.scope || 'today',
   target: Number(P.target) || 0,
   count: Number(P.count) || 0,
-  minutes: Number(P.minutes) || 85,
+  minutes: Math.min(105, Math.max(5, Number(P.minutes) || 105)),
   noBook: !!P.noBook,
   text: job.text || '',
 };
@@ -78,6 +78,19 @@ async function notify(title, body) {
   try {
     await save(true);
     await stage('Understanding request');
+    if (!Array.isArray(P.sports) || !req.sports.length ||
+        req.sports.some((s) => !['football','basketball','tennis','baseball','hockey'].includes(s))) {
+      throw new Error('The request must name one or more supported sports. No default sport will be guessed.');
+    }
+    if (!['today','tomorrow','weekend','next3days','next7days','week'].includes(req.scope)) {
+      throw new Error('Unsupported date period: ' + req.scope + '. Choose today, tomorrow, weekend, next 3 days or next 7 days.');
+    }
+    if (P.target != null && (!Number.isFinite(Number(P.target)) || Number(P.target) < 1 || Number(P.target) > 10000)) {
+      throw new Error('Invalid combined-odds target. The requested target must be between 1 and 10000.');
+    }
+    if (P.count != null && (!Number.isInteger(Number(P.count)) || Number(P.count) < 1 || Number(P.count) > 100)) {
+      throw new Error('Invalid selection count. It must be a whole number from 1 to 100.');
+    }
     log('request:', JSON.stringify(req));
     await site.start();
 
@@ -152,21 +165,39 @@ async function notify(title, body) {
     };
     await save(true);
 
-    if (!req.noBook) {
-      await stage('Preparing BangBet betslip');
-      state.booking = await bk.book(site, t.legs.map((c) => ({ ...state.ticket.legs[t.legs.indexOf(c)], })), deadline);
-      log('booking:', JSON.stringify(state.booking));
-    } else {
+    if (!t.complete) {
+      state.status = 'partial';
+      state.booking = { ok: false, why: 'ticket target/count was not reached; partial tickets are not booked' };
+      await stage('Partial result — target or requested count not reached');
+      state.stages[state.stages.length - 1].ok = true;
+      await notify('BETBRAIN — RESEARCH INCOMPLETE',
+        `Research stopped without reaching the requested ticket requirements.\nSelections: ${state.ticket.legs.length}\nTarget odds: ${req.target || 'not set'}\nTotal odds: ${state.ticket.total}\n${t.note || 'Requested requirements were not met.'}`);
+    } else if (req.noBook) {
+      state.status = 'booking_failed';
       state.booking = { ok: false, why: 'betslip preparation was switched off for this job' };
+      await stage('Research complete — betslip preparation disabled');
+      state.stages[state.stages.length - 1].ok = true;
+      await notify('BETBRAIN — BETSLIP NOT PREPARED', 'Research completed, but betslip preparation was disabled. No booking code exists.');
+    } else {
+      await stage('Preparing BangBet betslip');
+      state.booking = await bk.book(site, t.legs.map((c, i) => ({ ...state.ticket.legs[i] })), deadline);
+      log('booking:', JSON.stringify(state.booking));
+      if (state.booking.ok && state.booking.code) {
+        state.status = 'done';
+        await stage('Booking code confirmed');
+        state.stages[state.stages.length - 1].ok = true;
+        const names = req.sports.map((s) => s[0].toUpperCase() + s.slice(1)).join(' + ');
+        await notify('BETBRAIN — BOOKING CODE CONFIRMED',
+          `${names} research completed.\nSelections: ${state.ticket.legs.length}\nCombined odds: ${state.ticket.total}\nBangBet booking code: ${state.booking.code}`);
+      } else {
+        state.status = 'booking_failed';
+        await stage('Selections researched — booking code not confirmed');
+        state.stages[state.stages.length - 2].ok = false;
+        state.stages[state.stages.length - 1].ok = false;
+        await notify('BETBRAIN — BOOKING NOT CONFIRMED',
+          `Research found ${state.ticket.legs.length} selections at ${state.ticket.total} combined odds, but BangBet did not confirm a booking code. ${state.booking.why || ''}`);
+      }
     }
-
-    state.status = 'done';
-    await stage('Ready');
-    state.stages[state.stages.length - 1].ok = true;
-    const names = req.sports.map((s) => s[0].toUpperCase() + s.slice(1)).join(' + ');
-    await notify('BETBRAIN — YOUR TICKET IS READY',
-      `${names} research completed.\nSelections: ${state.ticket.legs.length}\nTarget odds: ${req.target || 'not set'}\nTotal odds: ${state.ticket.total}\nStatus: ${t.status === 'ready' ? 'Ready' : 'Ready (partial: ' + t.note + ')'}` +
-      (state.booking.ok ? `\nBangBet: ${state.booking.link || ''} ${state.booking.code ? '(code ' + state.booking.code + ')' : ''}` : '\nBangBet link: not prepared, open BetBrain to see the selections.'));
   } catch (e) {
     state.status = 'failed';
     state.error = e.message;

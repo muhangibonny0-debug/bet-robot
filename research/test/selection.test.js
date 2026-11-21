@@ -46,3 +46,34 @@ test('site JSON traversal does not silently truncate large fixture arrays', () =
   walk(Array.from({ length: 1308 }, (_, id) => ({ id })), () => seen++);
   assert.equal(seen, 1308);
 });
+
+
+test('betslip verification requires every match and its outcome to be visible', () => {
+  const { verifySlipText } = require('../lib/book');
+  const legs = [
+    { home: 'Arsenal', away: 'Liverpool', outcome: 'Home' },
+    { home: 'Chelsea', away: 'Tottenham', outcome: 'Over 1.5' },
+  ];
+  assert.equal(verifySlipText('Arsenal Liverpool Home Chelsea Tottenham Over 1.5', legs).ok, true);
+  const missing = verifySlipText('Arsenal Liverpool Home', legs);
+  assert.equal(missing.ok, false);
+  assert.equal(missing.missing.length, 1);
+});
+
+
+test('ticket is partial when the odds target is not reached', () => {
+  const picks = Array.from({ length: 2 }, (_, i) => ({ evKey: String(i), sport: 'football', odds: 1.2, p: 0.8, score: 1-i/10, ts: i }));
+  const ticket = build(picks, { target: 6, count: 0 });
+  assert.equal(ticket.complete, false);
+  assert.equal(ticket.status, 'partial');
+  assert.equal(ticket.targetReached, false);
+});
+
+test('ticket requires the requested selection count as well as odds', () => {
+  const picks = Array.from({ length: 3 }, (_, i) => ({ evKey: String(i), sport: 'football', odds: 2, p: 0.8, score: 1-i/10, ts: i }));
+  const ticket = build(picks, { target: 4, count: 3 });
+  assert.equal(ticket.targetReached, true);
+  assert.equal(ticket.countReached, false);
+  assert.equal(ticket.complete, false);
+  assert.equal(ticket.status, 'partial');
+});

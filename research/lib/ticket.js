@@ -44,7 +44,10 @@ function build(cands, req) {
   legs.sort((a, b) => (a.ts || 9e15) - (b.ts || 9e15));
   const total = legs.length ? product(legs) : 0;
   const targetReached = target > 0 && total >= target && total <= bandFor(target).hardMax;
-  const status = !legs.length ? 'empty' : (note || (target > 0 && !targetReached) ? 'partial' : 'ready');
-  return { legs, total, status, note, pool: pool.length, targetReached, targetBand: target > 0 ? bandFor(target) : null };
+  const countReached = count <= 0 || legs.length === count;
+  const complete = (target <= 0 || targetReached) && countReached && legs.length > 0;
+  if (!countReached) note = `Only ${legs.length} selections were supported; ${count} were requested.`;
+  const status = !legs.length ? 'empty' : (complete ? 'ready' : 'partial');
+  return { legs, total, status, note, pool: pool.length, targetReached, countReached, complete, targetBand: target > 0 ? bandFor(target) : null };
 }
 module.exports = { build, bandFor };

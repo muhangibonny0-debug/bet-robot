@@ -258,7 +258,8 @@ class Site {
       week: [/^next\s*7\s*days?$/i, /^next\s*seven\s*days?$/i, /^week$/i],
       weekend: [/^weekend$/i, /^this\s*weekend$/i],
     };
-    const wanted = choices[scope] || choices.today;
+    if (!choices[scope]) throw new Error('Unsupported BangBet Time period: ' + scope + '. Use today, tomorrow, next3days, next7days or weekend.');
+    const wanted = choices[scope];
     const time = page.getByText(/^time$/i);
     let opened = false;
     const count = Math.min(await time.count().catch(() => 0), 5);
