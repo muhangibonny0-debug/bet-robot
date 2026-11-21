@@ -259,7 +259,7 @@ function classify(title, label, ev) {
 
 async function markets(page, ev) {
   await openMarkets(page);
-  await expandAll(page);
+  // Read currently displayed markets first; do not expand and scroll every market group.
   const dom = await page.evaluate(MKT_JS).catch(() => []);
   let list = dom;
   // a price without a label (columns 1 X 2): the label comes from its position in the group

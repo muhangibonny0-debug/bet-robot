@@ -236,24 +236,51 @@ class Site {
     return false;
   }
 
-  // scrolls the list and collects every match row and every match found in the site's JSON
-  async collect(page, add, deadline) {
-    let still = 0;
-    while (Date.now() < deadline) {
-      let added = 0;
-      const rows = await page.evaluate(ROWS_JS).catch(() => []);
-      for (const r of rows) {
-        const parts = String(r.league || '').split(/\s*[·\-|>/]\s*/).filter(Boolean);
-        if (add({ home: r.home, away: r.away, ts: parseWhen(r.date, r.time), id: '', url: r.href || '',
-          league: parts.length ? parts[parts.length - 1] : '', country: parts.length > 1 ? parts[0] : '', odds: r.odds || [] })) added++;
-      }
-      for (const e of eventsFromNet(page.net.splice(0))) if (add({ ...e, odds: [] })) added++;
-      still = added ? 0 : still + 1;
-      if (still >= 6) break;
-      await page.evaluate(() => window.scrollBy(0, Math.round(innerHeight * 0.9))).catch(() => {});
-      await page.mouse.wheel(0, 900).catch(() => {});
-      await sleep(650);
+  // Read the fixtures BangBet has already displayed for the selected Time period.
+  // Do not scroll the fixture list or harvest unrelated network fixtures.
+  async collectVisible(page, add) {
+    const rows = await page.evaluate(ROWS_JS).catch(() => []);
+    for (const r of rows) {
+      const parts = String(r.league || '').split(/\\s*[·\\-|>/]\\s*/).filter(Boolean);
+      add({ home: r.home, away: r.away, ts: parseWhen(r.date, r.time), id: '', url: r.href || '',
+        league: parts.length ? parts[parts.length - 1] : '', country: parts.length > 1 ? parts[0] : '', odds: r.odds || [] });
     }
+  }
+
+  // BangBet's Time control owns date filtering. If the requested option is not
+  // present, stop clearly instead of silently scanning a different date range.
+  async selectScope(page, scope) {
+    const choices = {
+      today: [/^today$/i],
+      tomorrow: [/^tomorrow$/i],
+      next3days: [/^next\\s*3\\s*days?$/i, /^next\\s*three\\s*days?$/i],
+      next7days: [/^next\\s*7\\s*days?$/i, /^next\\s*seven\\s*days?$/i, /^week$/i],
+      week: [/^next\\s*7\\s*days?$/i, /^next\\s*seven\\s*days?$/i, /^week$/i],
+      weekend: [/^weekend$/i, /^this\\s*weekend$/i],
+    };
+    const wanted = choices[scope] || choices.today;
+    const time = page.getByText(/^time$/i);
+    let opened = false;
+    const count = Math.min(await time.count().catch(() => 0), 5);
+    for (let i = 0; i < count; i++) {
+      const item = time.nth(i);
+      if (await item.isVisible().catch(() => false)) {
+        await item.click({ timeout: 2500 }).catch(() => {});
+        opened = true;
+        break;
+      }
+    }
+    if (!opened) throw new Error('BangBet Time selector was not found; no fixture scan was started.');
+    await sleep(350);
+    for (const re of wanted) {
+      if (await this.clickText(page, re)) {
+        await sleep(900);
+        say('BangBet Time period selected:', scope);
+        return true;
+      }
+    }
+    const visible = await page.evaluate(() => (document.body?.innerText || '').slice(0, 1800)).catch(() => '');
+    throw new Error('BangBet Time selector opened, but the requested period "' + scope + '" was not available. Visible options: ' + visible.replace(/\\s+/g, ' ').slice(0, 500));
   }
 
   async discover(req, deadline) {
@@ -265,42 +292,27 @@ class Site {
       const add = (e) => {
         if (!e.home || !e.away) return;
         const k = `${norm(e.home)}|${norm(e.away)}`;
-        const o = seen.get(k);
-        if (!o) { seen.set(k, { sport, ...e }); return true; }
-        for (const f of ['ts', 'id', 'league', 'country', 'url']) if (!o[f]) o[f] = e[f] || o[f];
-        if ((!o.odds || !o.odds.length) && e.odds && e.odds.length) o.odds = e.odds;
-        return false;
+        if (!seen.has(k)) seen.set(k, { sport, ...e });
       };
       try {
-        if (!(await this.goSport(page, sport))) this.notes.push(`${sport}: the sport was not found in the BangBet menu`);
-        await this.shot(page, `discover_${sport}_1`);
-        await this.collect(page, add, deadline);
-        for (const re of [/^today$/i, /^tomorrow$/i]) {
-          if (await this.clickText(page, re)) { await sleep(1500); await this.collect(page, add, deadline); }
-        }
-        if (['week','weekend','next3days','next7days'].includes(req.scope)) {
-          const labels = await page.evaluate(() => Array.from(document.querySelectorAll('*'))
-            .filter((e) => e.children.length === 0).map((e) => (e.innerText || '').trim())
-            .filter((t) => t.length < 20 && /^(mon|tue|wed|thu|fri|sat|sun)[a-z]*[ .,]*\d{1,2}/i.test(t))).catch(() => []);
-          for (const lb of [...new Set(labels)]) {
-            const re = new RegExp('^' + lb.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i');
-            if (await this.clickText(page, re)) { await sleep(1500); await this.collect(page, add, deadline); }
-          }
-        }
-        await this.shot(page, `discover_${sport}_2`);
+        if (!(await this.goSport(page, sport))) throw new Error(`${sport}: the sport was not found in the BangBet menu`);
+        await this.selectScope(page, req.scope);
+        await this.shot(page, `discover_${sport}_selected_time`);
+        await this.collectVisible(page, add);
+        await this.shot(page, `discover_${sport}_fixtures`);
       } catch (e) {
-        this.notes.push(`${sport}: discovery error ${e.message}`);
+        this.notes.push(`${sport}: ${e.message}`);
       } finally {
         await page.close().catch(() => {});
       }
       all.push(...seen.values());
-      say(`${sport}: ${seen.size} matches discovered`);
+      say(`${sport}: ${seen.size} fixtures displayed for ${req.scope}`);
     }
     return all;
   }
 
   // opens a match: by its own address, or by finding its row again and clicking it
-  async openEvent(page, ev) {
+  async openEvent(page, ev, scope = 'today') {
     const verified = async () => {
       const body = await page.evaluate(() => document.body ? document.body.innerText : '').catch(() => '');
       const t = norm(body);
@@ -316,6 +328,7 @@ class Site {
       }
     }
     if (!(await this.goSport(page, ev.sport))) return false;
+    await this.selectScope(page, scope);
     const h = keyTok(ev.home);
     const a = keyTok(ev.away);
     let still = 0;

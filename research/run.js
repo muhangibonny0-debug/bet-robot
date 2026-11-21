@@ -83,12 +83,9 @@ async function notify(title, body) {
 
     await stage('Discovering available matches');
     let events = await site.discover(req, deadline);
-    state.counts.discovered = events.length;
-    const [from, to] = window_();
-    events = events.filter((e) => !e.ts || (e.ts >= from && e.ts < to)).map((e, i) => ({ ...e, key: `${e.sport}:${norm(e.home)}:${norm(e.away)}:${i}` }));
-    events.sort((a, b) => prio(a) - prio(b) || (a.ts || 9e15) - (b.ts || 9e15));
-    state.counts.inWindow = events.length;
-    if (!events.length) throw new Error('No matches could be discovered on BangBet for this request. ' + site.notes.join(' | '));
+    state.counts.displayed = events.length;
+    events = events.map((e, i) => ({ ...e, key: `${e.sport}:${norm(e.home)}:${norm(e.away)}:${i}` }));
+    if (!events.length) throw new Error('BangBet displayed no fixtures for the selected Time period. ' + site.notes.join(' | '));
     await save(true);
 
     await stage(`Inspecting matches one by one (0/${events.length})`);
@@ -99,24 +96,28 @@ async function notify(title, body) {
       for (const ev of events) {
         if (Date.now() > deadline) break;
         try {
-          if (!(await site.openEvent(page, ev))) {
+          if (!(await site.openEvent(page, ev, req.scope))) {
             ev.rejected = 'could not open or verify the match page';
           } else {
             ev.url = ev.url || page.url();
             ev.stats = await ex.stats(page, ev).catch((e) => ({ available: false, err: e.message }));
-            ev.markets = await ex.markets(page, ev).catch(() => []);
-            cands.push(...an.candidates(ev));
+            if (!ev.stats || !ev.stats.available) {
+              ev.rejected = 'BangBet Stats tab did not provide readable statistics';
+            } else {
+              ev.markets = await ex.markets(page, ev).catch(() => []);
+              cands.push(...an.candidates(ev));
+            }
             page.net.splice(0);
           }
         } catch (e) {
           ev.rejected = 'error: ' + e.message;
         }
         done++;
-        state.counts.analysed = done;
+        state.counts.opened = done;
         state.counts.withStats = events.filter((x) => x.stats && x.stats.available).length;
         state.counts.withMarkets = events.filter((x) => x.markets && x.markets.length).length;
         if (done % 2 === 0 || done === events.length) {
-          state.stage = `Inspecting matches one by one (${done}/${events.length} match pages checked)`;
+          state.stage = `Inspecting displayed fixtures (${done}/${events.length} opened)`;
           await save(false);
         }
         if (req.target > 0 && tk.build(cands, req).targetReached) {
