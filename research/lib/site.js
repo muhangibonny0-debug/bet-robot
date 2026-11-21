@@ -304,7 +304,7 @@ class Site {
     const verified = async () => {
       const body = await page.evaluate(() => document.body ? document.body.innerText : '').catch(() => '');
       const t = norm(body);
-      return t.includes(keyTok(ev.home)) && t.includes(keyTok(ev.away)) && /markets?|stats?|statistics/i.test(body);
+      return t.includes(keyTok(ev.home)) && t.includes(keyTok(ev.away)) && /markets?/i.test(body) && /stats?|statistics/i.test(body);
     };
     if (ev.url && /^https?:/.test(ev.url)) {
       try {
