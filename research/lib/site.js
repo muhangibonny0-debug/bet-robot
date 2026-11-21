@@ -327,11 +327,23 @@ class Site {
         await sleep(2200);
         return await verified();
       }
-      const before = await page.evaluate(() => document.documentElement.scrollHeight).catch(() => 0);
-      await page.evaluate(() => window.scrollBy(0, Math.round(innerHeight * 0.9))).catch(() => {});
+      const scrollPosition = () => page.evaluate(() => {
+        const els = Array.from(document.querySelectorAll('*'))
+          .filter(e => e.scrollHeight > e.clientHeight + 80)
+          .sort((a,b) => (b.scrollHeight-b.clientHeight) - (a.scrollHeight-a.clientHeight));
+        return els.length ? els[0].scrollTop : window.scrollY;
+      }).catch(() => 0);
+      const before = await scrollPosition();
+      await page.evaluate(() => {
+        const els = Array.from(document.querySelectorAll('*'))
+          .filter(e => e.scrollHeight > e.clientHeight + 80)
+          .sort((a,b) => (b.scrollHeight-b.clientHeight) - (a.scrollHeight-a.clientHeight));
+        if (els.length) els[0].scrollTop += Math.max(500, els[0].clientHeight * 0.85);
+        window.scrollBy(0, Math.round(innerHeight * 0.85));
+      }).catch(() => {});
       await page.mouse.wheel(0, 900).catch(() => {});
       await sleep(650);
-      const after = await page.evaluate(() => document.documentElement.scrollHeight).catch(() => 0);
+      const after = await scrollPosition();
       still = after === before ? still + 1 : 0;
     }
     return false;
