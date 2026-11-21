@@ -106,6 +106,7 @@ async function notify(title, body) {
             ev.stats = await ex.stats(page, ev).catch((e) => ({ available: false, err: e.message }));
             ev.markets = await ex.markets(page, ev).catch(() => []);
             cands.push(...an.candidates(ev));
+            page.net.splice(0);
           }
         } catch (e) {
           ev.rejected = 'error: ' + e.message;

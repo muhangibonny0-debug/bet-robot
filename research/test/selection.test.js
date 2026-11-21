@@ -39,3 +39,10 @@ test('BangBet Stats layout captures win probability, H2H and team averages', () 
   assert.equal(stats.goals.hFor, 2.2);
   assert.equal(stats.goals.aFor, 0.6);
 });
+
+test('site JSON traversal does not silently truncate large fixture arrays', () => {
+  const { walk } = require('../lib/util');
+  let seen = 0;
+  walk(Array.from({ length: 1308 }, (_, id) => ({ id })), () => seen++);
+  assert.equal(seen, 1308);
+});

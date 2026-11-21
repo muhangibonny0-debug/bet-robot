@@ -37,7 +37,7 @@ function keyTok(s) {
 
 function walk(o, fn, d = 0) {
   if (o == null || d > 9) return;
-  if (Array.isArray(o)) { for (const x of o.slice(0, 600)) walk(x, fn, d + 1); return; }
+  if (Array.isArray(o)) { for (const x of o) walk(x, fn, d + 1); return; }
   if (typeof o === 'object') { fn(o); for (const k of Object.keys(o)) walk(o[k], fn, d + 1); }
 }
 

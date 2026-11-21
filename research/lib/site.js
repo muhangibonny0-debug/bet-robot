@@ -176,7 +176,6 @@ class Site {
         if (txt.length > 3e6) return;
         page.net.push({ url: res.url(), body: JSON.parse(txt) });
         this.apis.add(res.url().split('?')[0]);
-        if (page.net.length > 200) page.net.shift();
       } catch (e) { /* not json */ }
     });
     return page;
@@ -283,7 +282,7 @@ class Site {
           const labels = await page.evaluate(() => Array.from(document.querySelectorAll('*'))
             .filter((e) => e.children.length === 0).map((e) => (e.innerText || '').trim())
             .filter((t) => t.length < 20 && /^(mon|tue|wed|thu|fri|sat|sun)[a-z]*[ .,]*\d{1,2}/i.test(t))).catch(() => []);
-          for (const lb of [...new Set(labels)].slice(0, 8)) {
+          for (const lb of [...new Set(labels)]) {
             const re = new RegExp('^' + lb.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i');
             if (await this.clickText(page, re)) { await sleep(1500); await this.collect(page, add, deadline); }
           }

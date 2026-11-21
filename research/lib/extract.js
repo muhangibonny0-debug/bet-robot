@@ -129,7 +129,7 @@ async function openMarkets(page) { await clickFirst(page, MKT_TAB); await sleep(
 async function expandAll(page) {
   for (let r = 0; r < 3; r++) {
     await page.evaluate(() => {
-      const els = Array.from(document.querySelectorAll('[aria-expanded="false"]')).slice(0, 80);
+      const els = Array.from(document.querySelectorAll('[aria-expanded="false"]'));
       els.forEach((e) => { try { e.click(); } catch (x) { /* ignore */ } });
     }).catch(() => {});
     await sleep(500);
