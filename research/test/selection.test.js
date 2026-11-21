@@ -21,3 +21,21 @@ test('markets outside 1X2 remain classifiable', () => {
   assert.equal(classify('Total Corners', 'Over 8.5', ev).type, 'STAT_OU');
   assert.equal(classify('Home Team Goals', 'Over 0.5', ev).type, 'TEAM_OU');
 });
+
+test('BangBet Stats layout captures win probability, H2H and team averages', () => {
+  const { parse } = require('../lib/bbstats');
+  const text = [
+    'H2H Team Average', 'Goals scored', '3.10', 'BTTS', '60%', 'Over 1.5', '65%',
+    'Win Probability', '69%', '17%', '14%',
+    'Previous Meetings', '28 Wins', '10 Draws', '4 Wins',
+    'Team Stats', 'Manchester City', 'Average Goals Scored', '2.20',
+    'Average Goals Conceded', '1.40', 'Fulham', 'Average Goals Scored', '0.60',
+    'Average Goals Conceded', '0.80'
+  ].join('\\n');
+  const stats = parse(text, { home: 'Manchester City', away: 'Fulham' });
+  assert.equal(stats.available, true);
+  assert.equal(stats.probs.H, 0.69);
+  assert.deepEqual(stats.h2h, { n: 42, H: 28, X: 10, A: 4 });
+  assert.equal(stats.goals.hFor, 2.2);
+  assert.equal(stats.goals.aFor, 0.6);
+});

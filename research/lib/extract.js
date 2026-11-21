@@ -132,10 +132,30 @@ async function expandAll(page) {
       const els = Array.from(document.querySelectorAll('[aria-expanded="false"]')).slice(0, 80);
       els.forEach((e) => { try { e.click(); } catch (x) { /* ignore */ } });
     }).catch(() => {});
-    await sleep(700);
+    await sleep(500);
   }
-  for (let i = 0; i < 6; i++) { await page.evaluate(() => window.scrollBy(0, Math.round(innerHeight * 0.9))).catch(() => {}); await sleep(450); }
-  await page.evaluate(() => window.scrollTo(0, 0)).catch(() => {});
+  // Follow the market list to its real end; do not assume it contains only a few screens.
+  let still = 0;
+  while (still < 5) {
+    const moved = await page.evaluate(() => {
+      const scrollables = Array.from(document.querySelectorAll('*'))
+        .filter(e => e.scrollHeight > e.clientHeight + 80)
+        .sort((a,b) => b.scrollHeight - a.scrollHeight);
+      const target = scrollables[0];
+      let moved = false;
+      if (target) {
+        const before = target.scrollTop;
+        target.scrollTop = Math.min(target.scrollHeight, before + Math.max(500, target.clientHeight * 0.85));
+        moved = target.scrollTop > before;
+      }
+      const y = window.scrollY;
+      window.scrollBy(0, Math.round(innerHeight * 0.85));
+      return moved || window.scrollY > y;
+    }).catch(() => false);
+    await sleep(450);
+    still = moved ? 0 : still + 1;
+  }
+  await page.evaluate(() => { window.scrollTo(0, 0); document.querySelectorAll('*').forEach(e => { if (e.scrollTop > 0) e.scrollTop = 0; }); }).catch(() => {});
 }
 
 // every price on the page with the title of its market and its label; elements are tagged for clicking

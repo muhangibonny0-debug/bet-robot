@@ -4,7 +4,7 @@ function bandFor(target) {
   return {
     min: target,
     preferredMax: target + Math.min(2.9, target * 0.05),
-    hardMax: target + Math.min(5, target * (5 / 60)),
+    hardMax: target <= 65 ? target + Math.min(5, target * (5 / 60), 65 - target) : target + Math.min(5, target * (5 / 60)),
   };
 }
 function build(cands, req) {
