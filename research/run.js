@@ -17,7 +17,7 @@ const req = {
   scope: P.scope || 'today',
   target: Number(P.target) || 0,
   count: Number(P.count) || 0,
-  maxEvents: Number(P.maxEvents) || Math.min(140, Math.max(60, (Number(P.count) || 10) * 5)),
+  maxEvents: Number(P.maxEvents) || Math.min(250, Math.max(120, (Number(P.count) || 22) * 8)),
   minutes: Number(P.minutes) || 85,
   noBook: !!P.noBook,
   text: job.text || '',
@@ -93,7 +93,7 @@ async function notify(title, body) {
     events = events.slice(0, req.maxEvents);
     await save(true);
 
-    await stage(`Collecting statistics and markets (${events.length} matches)`);
+    await stage(`Reviewing match pages and markets (${events.length} candidates in this batch)`);
     const pages = [await site.newPage(), await site.newPage(), await site.newPage()];
     let done = 0;
     const free = [...pages];
@@ -112,7 +112,7 @@ async function notify(title, body) {
         free.push(page);
         done++;
         state.counts.analysed = done;
-        if (done % 4 === 0) { state.stage = `Collecting statistics and markets (${done} of ${events.length})`; await save(false); }
+        if (done % 4 === 0) { state.stage = `Reviewing match pages and markets (${done}/${events.length} match pages checked)`; await save(false); }
       }
     });
     for (const p of pages) await p.close().catch(() => {});
