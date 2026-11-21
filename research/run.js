@@ -44,12 +44,25 @@ async function stage(s) {
 }
 
 function window_() {
-  const now = new Date();
-  const day = (d) => new Date(now.getFullYear(), now.getMonth(), now.getDate() + d).getTime();
-  if (req.scope === 'tomorrow') return [day(1), day(2)];
-  if (req.scope === 'week') { const toMon = (8 - now.getDay()) % 7 || 7; return [Date.now(), day(toMon)]; }
-  if (req.scope === 'weekend') { const toSat = (6 - now.getDay() + 7) % 7; return [Math.max(Date.now(), day(toSat)), day(toSat + 2)]; }
-  return [Date.now(), day(1)];
+  const now = Date.now();
+  const d = new Date(now);
+  const day = (n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n).getTime();
+  switch (req.scope) {
+    case 'next3hours': return [now, now + 3 * 60 * 60 * 1000];
+    case 'next6hours': return [now, now + 6 * 60 * 60 * 1000];
+    case 'today': return [now, day(1)];
+    case 'tomorrow': return [day(1), day(2)];
+    case 'next3days': return [now, now + 3 * 24 * 60 * 60 * 1000];
+    case 'next7days':
+    case 'week': return [now, now + 7 * 24 * 60 * 60 * 1000];
+    case 'weekend': {
+      const toSat = (6 - d.getDay() + 7) % 7;
+      const start = Math.max(now, day(toSat));
+      return [start, day(toSat + 2)];
+    }
+    case 'all': return [now, now + 30 * 24 * 60 * 60 * 1000];
+    default: return [now, day(1)];
+  }
 }
 
 const TOP = /(premier|champions|europa|la liga|serie a|bundesliga|ligue 1|eredivisie|primeira|championship|nba|euroleague|atp|wta|nhl|mlb)/i;
