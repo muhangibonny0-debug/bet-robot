@@ -238,22 +238,22 @@ class Site {
   }
 
   // scrolls the list and collects every match row and every match found in the site's JSON
-  async collect(page, add) {
-    let lastH = 0;
+  async collect(page, add, deadline) {
     let still = 0;
-    for (let i = 0; i < 40; i++) {
+    while (Date.now() < deadline) {
+      let added = 0;
       const rows = await page.evaluate(ROWS_JS).catch(() => []);
       for (const r of rows) {
         const parts = String(r.league || '').split(/\s*[·\-|>/]\s*/).filter(Boolean);
-        add({ home: r.home, away: r.away, ts: parseWhen(r.date, r.time), id: '', url: r.href || '',
-          league: parts.length ? parts[parts.length - 1] : '', country: parts.length > 1 ? parts[0] : '', odds: r.odds || [] });
+        if (add({ home: r.home, away: r.away, ts: parseWhen(r.date, r.time), id: '', url: r.href || '',
+          league: parts.length ? parts[parts.length - 1] : '', country: parts.length > 1 ? parts[0] : '', odds: r.odds || [] })) added++;
       }
-      for (const e of eventsFromNet(page.net.splice(0))) add({ ...e, odds: [] });
-      const h = await page.evaluate(() => { window.scrollBy(0, Math.round(innerHeight * 0.9)); return document.body.scrollHeight; }).catch(() => 0);
+      for (const e of eventsFromNet(page.net.splice(0))) if (add({ ...e, odds: [] })) added++;
+      still = added ? 0 : still + 1;
+      if (still >= 6) break;
+      await page.evaluate(() => window.scrollBy(0, Math.round(innerHeight * 0.9))).catch(() => {});
       await page.mouse.wheel(0, 900).catch(() => {});
-      await sleep(850);
-      if (h === lastH) { if (++still >= 4) break; } else still = 0;
-      lastH = h;
+      await sleep(650);
     }
   }
 
@@ -267,16 +267,17 @@ class Site {
         if (!e.home || !e.away) return;
         const k = `${norm(e.home)}|${norm(e.away)}`;
         const o = seen.get(k);
-        if (!o) { seen.set(k, { sport, ...e }); return; }
+        if (!o) { seen.set(k, { sport, ...e }); return true; }
         for (const f of ['ts', 'id', 'league', 'country', 'url']) if (!o[f]) o[f] = e[f] || o[f];
         if ((!o.odds || !o.odds.length) && e.odds && e.odds.length) o.odds = e.odds;
+        return false;
       };
       try {
         if (!(await this.goSport(page, sport))) this.notes.push(`${sport}: the sport was not found in the BangBet menu`);
         await this.shot(page, `discover_${sport}_1`);
-        await this.collect(page, add);
+        await this.collect(page, add, deadline);
         for (const re of [/^today$/i, /^tomorrow$/i]) {
-          if (await this.clickText(page, re)) { await sleep(1500); await this.collect(page, add); }
+          if (await this.clickText(page, re)) { await sleep(1500); await this.collect(page, add, deadline); }
         }
         if (['week','weekend','next3days','next7days'].includes(req.scope)) {
           const labels = await page.evaluate(() => Array.from(document.querySelectorAll('*'))
@@ -284,7 +285,7 @@ class Site {
             .filter((t) => t.length < 20 && /^(mon|tue|wed|thu|fri|sat|sun)[a-z]*[ .,]*\d{1,2}/i.test(t))).catch(() => []);
           for (const lb of [...new Set(labels)].slice(0, 8)) {
             const re = new RegExp('^' + lb.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i');
-            if (await this.clickText(page, re)) { await sleep(1500); await this.collect(page, add); }
+            if (await this.clickText(page, re)) { await sleep(1500); await this.collect(page, add, deadline); }
           }
         }
         await this.shot(page, `discover_${sport}_2`);
@@ -301,20 +302,37 @@ class Site {
 
   // opens a match: by its own address, or by finding its row again and clicking it
   async openEvent(page, ev) {
-    if (ev.url && /^https?:/.test(ev.url)) { await this.load(page, ev.url); return true; }
+    const verified = async () => {
+      const body = await page.evaluate(() => document.body ? document.body.innerText : '').catch(() => '');
+      const t = norm(body);
+      return t.includes(keyTok(ev.home)) && t.includes(keyTok(ev.away)) && /markets?|stats?|statistics/i.test(body);
+    };
+    if (ev.url && /^https?:/.test(ev.url)) {
+      try {
+        await this.load(page, ev.url);
+        if (await verified()) return true;
+        this.notes.push(`Fixture URL did not verify as ${ev.home} v ${ev.away}`);
+      } catch (e) {
+        this.notes.push(`Could not load ${ev.home} v ${ev.away}: ${e.message}`);
+      }
+    }
     if (!(await this.goSport(page, ev.sport))) return false;
     const h = keyTok(ev.home);
     const a = keyTok(ev.away);
-    for (let i = 0; i < 22; i++) {
+    let still = 0;
+    while (still < 6) {
       const found = await page.evaluate(FIND_JS, { h, a }).catch(() => false);
       if (found) {
         await page.locator('[data-bbgo="1"]').first().click({ timeout: 4000 }).catch(() => {});
-        await sleep(2500);
-        return true;
+        await sleep(2200);
+        return await verified();
       }
+      const before = await page.evaluate(() => document.documentElement.scrollHeight).catch(() => 0);
       await page.evaluate(() => window.scrollBy(0, Math.round(innerHeight * 0.9))).catch(() => {});
       await page.mouse.wheel(0, 900).catch(() => {});
-      await sleep(700);
+      await sleep(650);
+      const after = await page.evaluate(() => document.documentElement.scrollHeight).catch(() => 0);
+      still = after === before ? still + 1 : 0;
     }
     return false;
   }

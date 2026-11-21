@@ -5,7 +5,7 @@ const { norm } = require('./util');
 const CFG = {
   minForm: 3, // recent matches needed for each side
   minProb: { football: 0.5, basketball: 0.55, tennis: 0.55, baseball: 0.52, hockey: 0.5 },
-  minOdds: 1.15,
+  minOdds: 1.05,
   maxOdds: 12,
   wForm: 0.25, // how much recent form moves the market's own probability
   wH2H: 0.1, // how much head-to-head moves it
@@ -41,14 +41,15 @@ function candidates(ev) {
   const n = Math.min(hF.n, aF.n);
   if (!mk.length) { ev.rejected = 'no markets could be read for this match'; return out; }
   if (!st.available) { ev.rejected = 'no statistics could be read for this match'; return out; }
-  if (n < CFG.minForm) { ev.rejected = `not enough recent matches (${n})`; return out; }
+  const evidenceAvailable = n >= 2 || !!st.probs || !!(st.h2h && st.h2h.n) || (st.pct || []).length > 0 || Object.keys(st.avg || {}).length > 0;
+  if (!evidenceAvailable) { ev.rejected = 'no usable form, probability, H2H or team-stat evidence'; return out; }
 
   const h2n = st.h2h ? st.h2h.n : 0;
   const conf = Math.min(1, n / 5) * (h2n ? 1 : 0.85);
-  const facts = [
-    `${ev.home} last ${hF.n}: ${st.homeForm} (${hF.w} wins)`,
-    `${ev.away} last ${aF.n}: ${st.awayForm} (${aF.w} wins)`,
-  ];
+  const facts = [];
+  if (st.homeForm) facts.push(`${ev.home} recent form: ${st.homeForm}`);
+  if (st.awayForm) facts.push(`${ev.away} recent form: ${st.awayForm}`);
+  if (st.probs) facts.push(`BangBet win probability: ${Math.round(st.probs.H*100)}% / draw ${Math.round(st.probs.X*100)}% / ${Math.round(st.probs.A*100)}%`);
   if (h2n) facts.push(`Head-to-head (${h2n}): ${ev.home} ${st.h2h.H} wins, ${st.h2h.X} draws, ${ev.away} ${st.h2h.A} wins`);
   else facts.push('Head-to-head: no meetings found');
 
@@ -124,6 +125,33 @@ function candidates(ev) {
       if (po == null) continue;
       const q = m.side === 'O' ? po : 1 - po;
       push(m, q, `${m.side === 'O' ? 'Over' : 'Under'} ${m.line}: ${Math.round(100 * q)}% from the shown goal statistics.`);
+    }
+    for (const m of mk.filter((x) => x.type === 'HALF_OU' && x.side && x.line != null)) {
+      const line = String(m.line).replace('.', '\\s*');
+      const po = pctFor(st, new RegExp('(?:first half|1st half|half time|halftime).*over\\s*' + line + '|over\\s*' + line + '.*(?:first half|1st half|half time|halftime)'));
+      if (po == null) continue;
+      const q = m.side === 'O' ? po : 1 - po;
+      push(m, q, `First-half ${m.side === 'O' ? 'over' : 'under'} ${m.line}: ${Math.round(100*q)}% from displayed first-half statistics.`);
+    }
+    for (const m of mk.filter((x) => x.type === 'STAT_OU' && x.side && x.line != null)) {
+      const po = pctFor(st, new RegExp(m.stat + '.*over\\s*' + String(m.line).replace('.', '\\s*')));
+      if (po == null) continue;
+      const q = m.side === 'O' ? po : 1 - po;
+      push(m, q, `${m.stat} ${m.side === 'O' ? 'over' : 'under'} ${m.line}: ${Math.round(100*q)}% from displayed team statistics.`);
+    }
+    for (const m of mk.filter((x) => x.type === 'TEAM_SCORE' && x.teamSide)) {
+      if (lamH == null || lamA == null) continue;
+      const lam = m.teamSide === 'H' ? lamH : lamA;
+      const p = 1 - Math.exp(-lam);
+      const q = m.labelSide === 'N' ? 1-p : p;
+      push(m, q, `${m.teamSide === 'H' ? ev.home : ev.away} to score: estimated from displayed goals-scored average (${lam.toFixed(2)}).`);
+    }
+    for (const m of mk.filter((x) => x.type === 'TEAM_OU' && x.side && x.line != null)) {
+      if (lamH == null || lamA == null) continue;
+      const lam = m.teamSide === 'A' ? lamA : lamH;
+      const po = pOver(lam, m.line);
+      const q = m.side === 'O' ? po : 1-po;
+      push(m, q, `${m.teamSide === 'A' ? ev.away : ev.home} team goals ${m.side === 'O' ? 'over' : 'under'} ${m.line}, estimated from its goals-scored average (${lam.toFixed(2)}).`);
     }
   } else {
     for (const m of mk.filter((x) => x.type === 'OU' && x.side && x.line != null)) {

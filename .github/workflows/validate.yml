@@ -47,6 +47,9 @@ jobs:
           node --check research/lib/extract.js
           node --check research/lib/bbstats.js
           node --check research/lib/util.js
+          node --check research/lib/analyze.js
+          node --check research/lib/ticket.js
+          node --test research/test/selection.test.js
 
       - name: Compile and run the robot test in safe test-push mode
         env:

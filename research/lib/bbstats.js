@@ -25,7 +25,7 @@ const MARK = () => {
   const nodes = [...document.querySelectorAll('button,a,div,span,li,p')].filter(e => {
     const t = (e.innerText || '').trim().toLowerCase();
     const r = e.getBoundingClientRect();
-    return r.width > 4 && r.height > 4 && r.top < 750 && ['stats','statistics','stats new'].includes(t);
+    return r.width > 4 && r.height > 4 && ['stats','statistics','stats new'].includes(t);
   }).sort((a,b) => (a.innerText || '').length - (b.innerText || '').length);
   if (!nodes.length) return false;
   nodes[0].setAttribute('data-bbstats','1');
@@ -45,7 +45,7 @@ function best(frames) {
   let pick = { score: -1, text: '', where: '' };
   for (const f of frames) for (const field of ['visible','deep']) {
     const text = f[field];
-    const hits = (text.match(/previous meetings|win probability|last matches|team averages|team stats|h2h/gi) || []).length;
+    const hits = (text.match(/previous meetings|win probability|last matches|h2h team average|team averages?|team stats|h2h|both teams to score|goals scored|over 1\\.5/gi) || []).length;
     if (hits > pick.score || (hits === pick.score && hits > 0 && text.length > pick.text.length))
       pick = { score: hits, text, where: f.url + '#' + field };
   }
@@ -56,6 +56,18 @@ function parse(text, ev) {
   const upper = lines.map(x => x.toUpperCase());
   const at = re => upper.findIndex(x => re.test(x));
   const st = { available:false, source:'bangbet-embedded', homeForm:'', awayForm:'', h2h:null, pct:[], probs:null, avg:{}, missing:[] };
+  // Capture percentages even when BangBet puts the label and value on separate lines.
+  for (let i=0;i<lines.length;i++) {
+    const vals=[...lines[i].matchAll(/(\\d+(?:\\.\\d+)?)\\s*%/g)].map(m=>+m[1]);
+    if (!vals.length) continue;
+    let label=lines[i].replace(/\\d+(?:\\.\\d+)?\\s*%/g,' ').trim();
+    if (!/[A-Za-z]{2,}/.test(label)) {
+      for (let j=i-1;j>=Math.max(0,i-3);j--) {
+        if (/[A-Za-z]{2,}/.test(lines[j]) && !/^(HOME|AWAY|OVERALL|ALL)$/i.test(lines[j])) { label=lines[j]; break; }
+      }
+    }
+    if (label) st.pct.push({label:label.slice(0,90),vals});
+  }
   const wp = at(/WIN PROBABILITY/);
   if (wp >= 0) {
     const vals = [];
@@ -80,7 +92,7 @@ function parse(text, ev) {
     if (nums.length === 3 && nums.reduce((a,b)=>a+b,0))
       st.h2h = { n:nums.reduce((a,b)=>a+b,0), H:nums[0], X:nums[1], A:nums[2] };
   }
-  const ta = at(/TEAM AVERAGES/);
+  const ta = at(/H2H TEAM AVERAGE|TEAM AVERAGES?/);
   if (ta >= 0) {
     for (let i=ta+1;i<Math.min(lines.length,ta+70);i++) {
       const label = upper[i];
@@ -107,7 +119,7 @@ function parse(text, ev) {
     st.homeForm=h.form.slice(0,5); st.awayForm=a ? a.form.slice(0,5) : '';
     st.teams={home:h,away:a};
   }
-  st.available=!!(st.homeForm&&st.awayForm)||!!st.probs||!!st.h2h||Object.keys(st.avg).length>0;
+  st.available=!!(st.homeForm&&st.awayForm)||!!st.probs||!!st.h2h||Object.keys(st.avg).length>0||st.pct.length>0;
   if (!st.probs) st.missing.push('win probability');
   if (!st.h2h) st.missing.push('previous meetings');
   if (!st.homeForm||!st.awayForm) st.missing.push('recent form');

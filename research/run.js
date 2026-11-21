@@ -17,7 +17,6 @@ const req = {
   scope: P.scope || 'today',
   target: Number(P.target) || 0,
   count: Number(P.count) || 0,
-  maxEvents: Number(P.maxEvents) || Math.min(250, Math.max(120, (Number(P.count) || 22) * 8)),
   minutes: Number(P.minutes) || 85,
   noBook: !!P.noBook,
   text: job.text || '',
@@ -90,39 +89,49 @@ async function notify(title, body) {
     events.sort((a, b) => prio(a) - prio(b) || (a.ts || 9e15) - (b.ts || 9e15));
     state.counts.inWindow = events.length;
     if (!events.length) throw new Error('No matches could be discovered on BangBet for this request. ' + site.notes.join(' | '));
-    events = events.slice(0, req.maxEvents);
     await save(true);
 
-    await stage(`Reviewing match pages and markets (${events.length} candidates in this batch)`);
-    const pages = [await site.newPage(), await site.newPage(), await site.newPage()];
+    await stage(`Inspecting matches one by one (0/${events.length})`);
+    const page = await site.newPage();
+    const cands = [];
     let done = 0;
-    const free = [...pages];
-    await pool(events, 3, async (ev) => {
-      if (Date.now() > deadline) return;
-      const page = free.pop();
-      try {
-        if (!(await site.openEvent(page, ev))) { ev.rejected = 'could not open the match page'; return; }
-        const here = page.url();
-        ev.url = ev.url || here;
-        ev.stats = await ex.stats(page, ev).catch((e) => ({ available: false, err: e.message }));
-        ev.markets = await ex.markets(page, ev).catch(() => []);
-      } catch (e) {
-        ev.rejected = 'error: ' + e.message;
-      } finally {
-        free.push(page);
+    try {
+      for (const ev of events) {
+        if (Date.now() > deadline) break;
+        try {
+          if (!(await site.openEvent(page, ev))) {
+            ev.rejected = 'could not open or verify the match page';
+          } else {
+            ev.url = ev.url || page.url();
+            ev.stats = await ex.stats(page, ev).catch((e) => ({ available: false, err: e.message }));
+            ev.markets = await ex.markets(page, ev).catch(() => []);
+            cands.push(...an.candidates(ev));
+          }
+        } catch (e) {
+          ev.rejected = 'error: ' + e.message;
+        }
         done++;
         state.counts.analysed = done;
-        if (done % 4 === 0) { state.stage = `Reviewing match pages and markets (${done}/${events.length} match pages checked)`; await save(false); }
+        state.counts.withStats = events.filter((x) => x.stats && x.stats.available).length;
+        state.counts.withMarkets = events.filter((x) => x.markets && x.markets.length).length;
+        if (done % 2 === 0 || done === events.length) {
+          state.stage = `Inspecting matches one by one (${done}/${events.length} match pages checked)`;
+          await save(false);
+        }
+        if (req.target > 0 && tk.build(cands, req).targetReached) {
+          state.counts.targetReachedAfter = done;
+          break;
+        }
       }
-    });
-    for (const p of pages) await p.close().catch(() => {});
+    } finally {
+      await page.close().catch(() => {});
+    }
 
     await stage('Evaluating candidate selections');
-    const cands = [];
-    for (const ev of events) if (ev.markets) cands.push(...an.candidates(ev));
     state.counts.withStats = events.filter((e) => e.stats && e.stats.available).length;
     state.counts.withMarkets = events.filter((e) => e.markets && e.markets.length).length;
     state.counts.candidates = cands.length;
+    state.counts.remainingAfterStop = Math.max(0, events.length - done);
 
     await stage('Constructing ticket');
     const t = tk.build(cands, req);

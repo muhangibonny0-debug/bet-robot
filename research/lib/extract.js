@@ -202,6 +202,15 @@ function classify(title, label, ev) {
     if (sameTeam(label, ev.away) || (norm(ev.away) && l.includes(norm(ev.away)))) return 'A';
     return '';
   };
+  const ouEarly = /(over|under)\\s*([0-9]+(?:\\.[0-9]+)?)/.exec(l);
+  const tlEarly = /(over|under)/.test(l) ? /([0-9]+(?:\\.[0-9]+)?)/.exec(t) : null;
+  const lineEarly = ouEarly ? parseFloat(ouEarly[2]) : (tlEarly ? parseFloat(tlEarly[1]) : null);
+  const dirEarly = ouEarly ? ouEarly[1] : (/over/.test(l) ? 'over' : 'under');
+  if (/(first half|1st half|half time|halftime)/.test(t) && lineEarly != null) return { type: 'HALF_OU', side: dirEarly === 'over' ? 'O' : 'U', line: lineEarly };
+  if (/(corner|card|booking)/.test(t) && lineEarly != null) return { type: 'STAT_OU', stat: /(corner)/.test(t) ? 'corner' : 'card', side: dirEarly === 'over' ? 'O' : 'U', line: lineEarly };
+  if (/(team total|team goals|home team goals|away team goals)/.test(t) && lineEarly != null) return { type: 'TEAM_OU', teamSide: /away team/.test(t) ? 'A' : 'H', side: dirEarly === 'over' ? 'O' : 'U', line: lineEarly };
+  if (/to score/.test(t) && /^(yes|no)$/.test(l)) return { type: 'TEAM_SCORE', teamSide: /away/.test(t) ? 'A' : 'H', labelSide: l === 'no' ? 'N' : 'Y' };
+  if (/win either half|to win a half|to win any half/.test(t)) return { type: 'WIN_HALF', side: side() };
   if (/(half|1st|2nd|first|second|corner|card|booking|penalt|offside|player|scorer|exact|correct|margin|handicap|quarter|set |inning|period)/.test(t)) return { type: 'OTHER' };
   if (/double chance/.test(t)) {
     const s = l.replace(/\s/g, '');

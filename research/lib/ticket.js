@@ -1,68 +1,50 @@
 'use strict';
 const { CFG } = require('./analyze');
-
-// one selection per match, then the best fit to the number of selections and the odds asked for
+function bandFor(target) {
+  return {
+    min: target,
+    preferredMax: target + Math.min(2.9, target * 0.05),
+    hardMax: target + Math.min(5, target * (5 / 60)),
+  };
+}
 function build(cands, req) {
   const best = new Map();
   for (const c of cands) {
     if (c.p < (CFG.minProb[c.sport] || 0.5) || c.odds < CFG.minOdds || c.odds > CFG.maxOdds) continue;
-    const b = best.get(c.evKey);
-    if (!b || c.score > b.score) best.set(c.evKey, c);
+    const old = best.get(c.evKey);
+    if (!old || c.score > old.score) best.set(c.evKey, c);
   }
-  let pool = [...best.values()].sort((a, b) => b.score - a.score);
-  if (req.sports.length > 1) {
-    const by = {};
-    for (const c of pool) (by[c.sport] = by[c.sport] || []).push(c);
-    const mix = [];
-    for (let i = 0; mix.length < pool.length; i++) {
-      let any = false;
-      for (const s of Object.keys(by)) if (by[s][i]) { mix.push(by[s][i]); any = true; }
-      if (!any) break;
-    }
-    pool = mix;
-  }
-  const prod = (l) => l.reduce((t, c) => t * c.odds, 1);
-  const target = req.target || 0;
-  const count = req.count || 0;
+  const pool = [...best.values()].sort((a, b) => b.score - a.score);
+  const product = (legs) => legs.reduce((v, c) => v * c.odds, 1);
+  const target = Number(req.target) || 0;
+  const count = Number(req.count) || 0;
   let legs = [];
+  let fallback = null;
   let note = '';
-
-  if (count) {
-    legs = pool.slice(0, count);
-    if (target && legs.length) {
-      // swap selections to bring the total odds closer to the target, keeping the best evidence
-      const J = (l) => l.reduce((s, c) => s + c.score, 0) - 2 * Math.abs(Math.log(prod(l) / target));
-      for (let it = 0; it < 300; it++) {
-        let bestJ = J(legs);
-        let move = null;
-        for (let i = 0; i < legs.length; i++) {
-          for (const c of pool) {
-            if (legs.includes(c)) continue;
-            const t = legs.slice(); t[i] = c;
-            const j = J(t);
-            if (j > bestJ + 1e-9) { bestJ = j; move = t; }
-          }
-        }
-        if (!move) break;
-        legs = move;
-      }
-    }
-    if (legs.length < count) note = `Only ${legs.length} selections have enough evidence (asked for ${count}).`;
-  } else if (target) {
+  if (target > 0) {
+    const band = bandFor(target);
     for (const c of pool) {
-      if (prod(legs) >= target * 0.9) break;
-      if (prod(legs) * c.odds > target * 1.25 && legs.length) continue;
-      legs.push(c);
+      if (count && legs.length >= count) break;
+      const next = [...legs, c];
+      const total = product(next);
+      if (total > band.hardMax) continue;
+      if (total <= band.preferredMax) legs = next;
+      else if (!fallback) fallback = next;
+      if (product(legs) >= target) break;
     }
-    if (prod(legs) < target * 0.85) note = `The selections with enough evidence only reach ${prod(legs).toFixed(1)} odds.`;
+    if (product(legs) < target && fallback && product(fallback) >= target) legs = fallback;
+    if (product(legs) < target)
+      note = `Supported selections reached ${product(legs).toFixed(2)} odds; target ${target.toFixed(2)}. More matches need checking.`;
+  } else if (count) {
+    legs = pool.slice(0, count);
+    if (legs.length < count) note = `Only ${legs.length} supported selections were found (asked for ${count}).`;
   } else {
     legs = pool.slice(0, 10);
   }
   legs.sort((a, b) => (a.ts || 9e15) - (b.ts || 9e15));
-  const total = legs.length ? prod(legs) : 0;
-  let status = legs.length ? 'ready' : 'empty';
-  if (note && legs.length) status = 'partial';
-  return { legs, total, status, note, pool: pool.length };
+  const total = legs.length ? product(legs) : 0;
+  const targetReached = target > 0 && total >= target && total <= bandFor(target).hardMax;
+  const status = !legs.length ? 'empty' : (note || (target > 0 && !targetReached) ? 'partial' : 'ready');
+  return { legs, total, status, note, pool: pool.length, targetReached, targetBand: target > 0 ? bandFor(target) : null };
 }
-
-module.exports = { build };
+module.exports = { build, bandFor };
