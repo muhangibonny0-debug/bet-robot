@@ -1,0 +1,55 @@
+name: Robot Validation
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: robot-validation
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out robot
+        uses: actions/checkout@v4
+
+      - name: Check out BetBrain app source
+        uses: actions/checkout@v4
+        with:
+          repository: muhangibonny0-debug/com.bonny.bet_brain
+          token: ${{ secrets.APP_REPO_TOKEN }}
+          path: app
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Prepare the app package
+        run: |
+          cp app/pubspec.yaml pubspec.yaml
+          rm -rf lib
+          cp -r app/lib lib
+          flutter pub get
+
+      - name: Check research JavaScript syntax
+        run: |
+          node --check research/run.js
+          node --check research/lib/site.js
+          node --check research/lib/extract.js
+          node --check research/lib/bbstats.js
+          node --check research/lib/util.js
+
+      - name: Compile and run the robot test in safe test-push mode
+        env:
+          TEST_PUSH: 'true'
+          BOT_OFF: 'true'
+        run: flutter test test/robot_test.dart --reporter expanded
