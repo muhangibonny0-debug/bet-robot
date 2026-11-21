@@ -31,7 +31,7 @@ test('BangBet Stats layout captures win probability, H2H and team averages', () 
     'Team Stats', 'Manchester City', 'Average Goals Scored', '2.20',
     'Average Goals Conceded', '1.40', 'Fulham', 'Average Goals Scored', '0.60',
     'Average Goals Conceded', '0.80'
-  ].join('\\n');
+  ].join('\n');
   const stats = parse(text, { home: 'Manchester City', away: 'Fulham' });
   assert.equal(stats.available, true);
   assert.equal(stats.probs.H, 0.69);
