@@ -45,8 +45,8 @@ function best(frames) {
   let pick = { score: -1, text: '', where: '' };
   for (const f of frames) for (const field of ['visible','deep']) {
     const text = f[field];
-    const hits = (text.match(/previous meetings|win probability|last matches|h2h team average|team averages?|team stats|h2h|both teams to score|goals scored|over 1\\.5/gi) || []).length;
-    if (hits > pick.score || (hits === pick.score && hits > 0 && text.length > pick.text.length))
+    const hits = (text.match(/previous meetings|win probability|last matches|h2h team average|team averages?|team stats|h2h|both teams to score|goals scored|over 1\.5/gi) || []).length;
+    if ((hits > pick.score && hits > 0) || (hits === pick.score && hits > 0 && text.length > pick.text.length))
       pick = { score: hits, text, where: f.url + '#' + field };
   }
   return pick;
@@ -58,9 +58,9 @@ function parse(text, ev) {
   const st = { available:false, source:'bangbet-embedded', homeForm:'', awayForm:'', h2h:null, pct:[], probs:null, avg:{}, missing:[] };
   // Capture percentages even when BangBet puts the label and value on separate lines.
   for (let i=0;i<lines.length;i++) {
-    const vals=[...lines[i].matchAll(/(\\d+(?:\\.\\d+)?)\\s*%/g)].map(m=>+m[1]);
+    const vals=[...lines[i].matchAll(/(\d+(?:\.\d+)?)\s*%/g)].map(m=>+m[1]);
     if (!vals.length) continue;
-    let label=lines[i].replace(/\\d+(?:\\.\\d+)?\\s*%/g,' ').trim();
+    let label=lines[i].replace(/\d+(?:\.\d+)?\s*%/g,' ').trim();
     if (!/[A-Za-z]{2,}/.test(label)) {
       for (let j=i-1;j>=Math.max(0,i-3);j--) {
         if (/[A-Za-z]{2,}/.test(lines[j]) && !/^(HOME|AWAY|OVERALL|ALL)$/i.test(lines[j])) { label=lines[j]; break; }
@@ -92,6 +92,41 @@ function parse(text, ev) {
     if (nums.length === 3 && nums.reduce((a,b)=>a+b,0))
       st.h2h = { n:nums.reduce((a,b)=>a+b,0), H:nums[0], X:nums[1], A:nums[2] };
   }
+  const teamAt = at(/^TEAM STATS/);
+  if (teamAt >= 0) {
+    st.teamStats = { home: {}, away: {} };
+    let active = '';
+    const metricNames = [
+      ['AVERAGE GOALS SCORED', 'avgGoalsFor'], ['AVERAGE GOALS CONCEDED', 'avgGoalsAgainst'],
+      ['GOALS SCORED', 'goalsFor'], ['GOALS CONCEDED', 'goalsAgainst'],
+      ['BOTH TEAMS TO SCORE', 'btts'], ['BTTS', 'btts'],
+      ['TOTAL CARDS', 'cards'], ['YELLOW CARDS', 'yellowCards'], ['CORNERS', 'corners'],
+    ];
+    for (let i=teamAt+1;i<lines.length;i++) {
+      const line=upper[i];
+      if (/^(LAST MATCHES|H2H TEAM AVERAGE|TEAM AVERAGES?)/.test(line)) break;
+      const n=norm(lines[i]);
+      if (n.includes(keyTok(ev.home))) { active='home'; continue; }
+      if (n.includes(keyTok(ev.away))) { active='away'; continue; }
+      if (!active) continue;
+      const metric=metricNames.find(([label])=>line===label);
+      if (!metric) continue;
+      const values=[];
+      const same=[...lines[i].matchAll(/-?\d+(?:\.\d+)?\s*%?/g)].map(m=>parseFloat(m[0]));
+      values.push(...same);
+      for(let j=i+1;j<Math.min(lines.length,i+5)&&values.length===0;j++) {
+        if (metricNames.some(([label])=>upper[j]===label)) break;
+        const found=[...lines[j].matchAll(/-?\d+(?:\.\d+)?\s*%?/g)].map(m=>parseFloat(m[0]));
+        values.push(...found);
+      }
+      if(values.length) st.teamStats[active][metric[1]]=values[0];
+    }
+    const h=st.teamStats.home, a=st.teamStats.away;
+    if (Number.isFinite(h.avgGoalsFor) && Number.isFinite(a.avgGoalsFor) &&
+        Number.isFinite(h.avgGoalsAgainst) && Number.isFinite(a.avgGoalsAgainst)) {
+      st.goals={hFor:h.avgGoalsFor,aFor:a.avgGoalsFor,hAg:h.avgGoalsAgainst,aAg:a.avgGoalsAgainst};
+    }
+  }
   const ta = at(/H2H TEAM AVERAGE|TEAM AVERAGES?/);
   if (ta >= 0) {
     for (let i=ta+1;i<Math.min(lines.length,ta+70);i++) {
@@ -119,7 +154,7 @@ function parse(text, ev) {
     st.homeForm=h.form.slice(0,5); st.awayForm=a ? a.form.slice(0,5) : '';
     st.teams={home:h,away:a};
   }
-  st.available=!!(st.homeForm&&st.awayForm)||!!st.probs||!!st.h2h||Object.keys(st.avg).length>0||st.pct.length>0;
+  st.available=!!(st.homeForm&&st.awayForm)||!!st.probs||!!st.h2h||Object.keys(st.avg).length>0||st.pct.length>0||!!st.teamStats;
   if (!st.probs) st.missing.push('win probability');
   if (!st.h2h) st.missing.push('previous meetings');
   if (!st.homeForm||!st.awayForm) st.missing.push('recent form');

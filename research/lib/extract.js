@@ -202,33 +202,38 @@ function classify(title, label, ev) {
     if (sameTeam(label, ev.away) || (norm(ev.away) && l.includes(norm(ev.away)))) return 'A';
     return '';
   };
-  const ouEarly = /(over|under)\\s*([0-9]+(?:\\.[0-9]+)?)/.exec(l);
-  const tlEarly = /(over|under)/.test(l) ? /([0-9]+(?:\\.[0-9]+)?)/.exec(t) : null;
-  const lineEarly = ouEarly ? parseFloat(ouEarly[2]) : (tlEarly ? parseFloat(tlEarly[1]) : null);
-  const dirEarly = ouEarly ? ouEarly[1] : (/over/.test(l) ? 'over' : 'under');
-  if (/(first half|1st half|half time|halftime)/.test(t) && lineEarly != null) return { type: 'HALF_OU', side: dirEarly === 'over' ? 'O' : 'U', line: lineEarly };
-  if (/(corner|card|booking)/.test(t) && lineEarly != null) return { type: 'STAT_OU', stat: /(corner)/.test(t) ? 'corner' : 'card', side: dirEarly === 'over' ? 'O' : 'U', line: lineEarly };
-  if (/(team total|team goals|home team goals|away team goals)/.test(t) && lineEarly != null) return { type: 'TEAM_OU', teamSide: /away team/.test(t) ? 'A' : 'H', side: dirEarly === 'over' ? 'O' : 'U', line: lineEarly };
-  if (/to score/.test(t) && /^(yes|no)$/.test(l)) return { type: 'TEAM_SCORE', teamSide: /away/.test(t) ? 'A' : 'H', labelSide: l === 'no' ? 'N' : 'Y' };
-  if (/win either half|to win a half|to win any half/.test(t)) return { type: 'WIN_HALF', side: side() };
-  if (/(half|1st|2nd|first|second|corner|card|booking|penalt|offside|player|scorer|exact|correct|margin|handicap|quarter|set |inning|period)/.test(t)) return { type: 'OTHER' };
+  const teamSide = () => norm(ev.away).split(' ').some(w => w.length > 3 && t.includes(w)) ? 'A' : 'H';
+  const ou = /(over|under)\s*([0-9]+(?:\.[0-9]+)?)/.exec(l);
+  const tl = /(over|under)/.test(l) ? /([0-9]+(?:\.[0-9]+)?)/.exec(t) : null;
+  const line = ou ? parseFloat(ou[2]) : (tl ? parseFloat(tl[1]) : null);
+  const direction = ou ? ou[1] : (/over/.test(l) ? 'over' : 'under');
+
+  if (/(first half|1st half|half time|halftime)/.test(t) && line != null)
+    return { type: 'HALF_OU', side: direction === 'over' ? 'O' : 'U', line };
+  if (/(corner|card|booking)/.test(t) && line != null)
+    return { type: 'STAT_OU', stat: /corner/.test(t) ? 'corner' : 'card', side: direction === 'over' ? 'O' : 'U', line };
+  if (/(team total|team goals|home team goals|away team goals)/.test(t) && line != null)
+    return { type: 'TEAM_OU', teamSide: teamSide(), side: direction === 'over' ? 'O' : 'U', line };
+  if (/to score/.test(t) && /^(yes|no)$/.test(l))
+    return { type: 'TEAM_SCORE', teamSide: teamSide(), labelSide: l === 'no' ? 'N' : 'Y' };
+  if (/win either half|to win a half|to win any half/.test(t))
+    return { type: 'WIN_HALF', side: side() };
+  if (/(half|1st|2nd|first|second|corner|card|booking|penalt|offside|player|scorer|exact|correct|margin|handicap|quarter|set |inning|period)/.test(t))
+    return { type: 'OTHER' };
   if (/double chance/.test(t)) {
     const s = l.replace(/\s/g, '');
     return { type: 'DC', side: s === '1x' || /homeordraw/.test(s) ? '1X' : (s === 'x2' || /draworaway/.test(s) ? 'X2' : (s === '12' || /homeoraway/.test(s) ? '12' : '')) };
   }
   if (/draw no bet/.test(t)) return { type: 'DNB', side: side() };
   if (/(both teams to score|btts|gg ng)/.test(t)) return { type: 'BTTS', side: /^(yes|gg)$/.test(l) ? 'Y' : (/^(no|ng)$/.test(l) ? 'N' : '') };
-  const ou = /(over|under)\s*([0-9]+(?:\.[0-9]+)?)/.exec(l);
-  const tl = /(over|under)/.test(l) ? /([0-9]+(?:\.[0-9]+)?)/.exec(t) : null;
   if ((ou || tl) && /(total|over|under|goals|points|runs)/.test(t)) {
     const homeWord = norm(ev.home).split(' ').some((w) => w.length > 3 && t.includes(w));
     const awayWord = norm(ev.away).split(' ').some((w) => w.length > 3 && t.includes(w));
-    if (homeWord || awayWord) return { type: 'OTHER' };
-    const o = ou ? ou[1] : (/over/.test(l) ? 'over' : 'under');
-    const line = ou ? parseFloat(ou[2]) : parseFloat(tl[1]);
-    return { type: 'OU', side: o === 'over' ? 'O' : 'U', line };
+    if (homeWord || awayWord) return { type: 'TEAM_OU', teamSide: awayWord ? 'A' : 'H', side: direction === 'over' ? 'O' : 'U', line };
+    return { type: 'OU', side: direction === 'over' ? 'O' : 'U', line };
   }
-  if (/(1x2|match result|match winner|moneyline|full time result|to win|^result$|^winner$|^full time$|regular time)/.test(t)) return { type: 'WIN', side: side() };
+  if (/(1x2|match result|match winner|moneyline|full time result|to win|^result$|^winner$|^full time$|regular time)/.test(t))
+    return { type: 'WIN', side: side() };
   return { type: 'OTHER' };
 }
 

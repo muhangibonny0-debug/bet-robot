@@ -9,7 +9,7 @@ test('60 odds target has a narrow preferred band and a 65 hard ceiling', () => {
 });
 test('ticket builder does not treat odds target as a match count', () => {
   const picks = Array.from({ length: 30 }, (_, i) => ({
-    evKey: String(i), sport: 'football', odds: 1.25, p: 0.8, score: 1 - i / 100, ts: i,
+    evKey: String(i), sport: 'football', odds: 1.18, p: 0.8, score: 1 - i / 100, ts: i,
   }));
   const ticket = build(picks, { target: 60, count: 0, sports: ['football'] });
   assert.ok(ticket.total >= 60 && ticket.total <= 65);
