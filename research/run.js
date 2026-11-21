@@ -116,11 +116,14 @@ async function notify(title, body) {
         state.counts.opened = done;
         state.counts.withStats = events.filter((x) => x.stats && x.stats.available).length;
         state.counts.withMarkets = events.filter((x) => x.markets && x.markets.length).length;
-        if (done % 2 === 0 || done === events.length) {
-          state.stage = `Inspecting displayed fixtures (${done}/${events.length} opened)`;
+        const progressTicket = tk.build(cands, req);
+        state.counts.selections = progressTicket.legs.length;
+        state.counts.combinedOdds = Math.round(progressTicket.total * 100) / 100;
+        if (done % 1 === 0 || done === events.length) {
+          state.stage = `Inspecting displayed fixtures (${done}/${events.length}); ${progressTicket.legs.length} selections, combined odds ${state.counts.combinedOdds}`;
           await save(false);
         }
-        if (req.target > 0 && tk.build(cands, req).targetReached) {
+        if (req.target > 0 && progressTicket.targetReached) {
           state.counts.targetReachedAfter = done;
           break;
         }

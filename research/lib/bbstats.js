@@ -168,12 +168,15 @@ async function stats(page, ev, legacy) {
     if(!clicked) await sleep(900);
   }
   let frames=[], pick={score:-1,text:'',where:''};
-  for(let i=0;i<8;i++){
-    await sleep(i===0?1800:1200);
+  // One fast read plus two bounded checks; avoid the old eight-round wait loop.
+  for(let i=0;i<3;i++){
+    await sleep(i===0?900:650);
     frames=await readFrames(page); pick=best(frames);
     if(pick.score>=2) break;
-    if(i===3) await page.getByText(/^h2h$/i).first().click({timeout:1500}).catch(()=>{});
-    await page.evaluate(()=>window.scrollBy(0,Math.round(innerHeight*.75))).catch(()=>{});
+    if(i===1) {
+      await page.getByText(/^h2h$/i).first().click({timeout:1000}).catch(()=>{});
+      await page.evaluate(()=>window.scrollBy(0,Math.round(innerHeight*.55))).catch(()=>{});
+    }
   }
   let st=parse(pick.text,ev);
   if(!st.available&&legacy){ try { const old=legacy(pick.text,ev); if(old&&old.available) st={...old,source:'legacy'}; } catch(_){} }
