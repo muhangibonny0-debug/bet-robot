@@ -58,7 +58,6 @@ jobs:
           cp app/pubspec.yaml pubspec.yaml
           rm -rf lib
           cp -r app/lib lib
-          sed -i 's/^dev_dependencies:/dev_dependencies:\n  flutter_test:\n    sdk: flutter/' pubspec.yaml
           flutter pub get
 
       - name: Look at the BangBet site (discover)
