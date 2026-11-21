@@ -241,4 +241,7 @@ async function markets(page, ev) {
   return list.filter((m) => m.title).map((m) => ({ ...m, ...classify(m.title, m.label, ev) }));
 }
 
-module.exports = { stats, markets, openMarkets, classify, parseStatsText };
+module.exports = {
+  stats: (page, ev) => require('./bbstats').stats(page, ev, parseStatsText),
+  markets, openMarkets, classify, parseStatsText,
+};
