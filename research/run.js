@@ -78,10 +78,10 @@ function validateRequest(P, req) {
       throw new Error('Invalid date range. Expected valid YYYY-MM-DD dateFrom and dateTo.');
     }
   }
-  if (P.target != null && (!Number.isFinite(Number(P.target)) || Number(P.target) < 1 || Number(P.target) > 10000)) {
+  if (P.target != null && Number(P.target) !== 0 && (!Number.isFinite(Number(P.target)) || Number(P.target) < 1 || Number(P.target) > 10000)) {
     throw new Error('Invalid combined-odds target. The requested target must be between 1 and 10000.');
   }
-  if (P.count != null && (!Number.isInteger(Number(P.count)) || Number(P.count) < 1 || Number(P.count) > 100)) {
+  if (P.count != null && Number(P.count) !== 0 && (!Number.isInteger(Number(P.count)) || Number(P.count) < 1 || Number(P.count) > 100)) {
     throw new Error('Invalid selection count. It must be a whole number from 1 to 100.');
   }
   if (P.markets != null && (!Array.isArray(P.markets) || P.markets.some((m) => typeof m !== 'string'))) {
