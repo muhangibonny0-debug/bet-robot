@@ -1,6 +1,7 @@
 'use strict';
 // Scoring and ranking only. It knows nothing about the website, so it can be improved on its own.
 const { norm } = require('./util');
+const { matchesMarketFilter } = require('./markets');
 
 const CFG = {
   minForm: 3, // recent matches needed for each side
@@ -31,7 +32,7 @@ function pctFor(st, re) {
   return e.vals.reduce((a, b) => a + b, 0) / e.vals.length / 100;
 }
 
-function candidates(ev) {
+function candidates(ev, req) {
   const out = [];
   const st = ev.stats || {};
   const mk = ev.markets || [];
@@ -54,10 +55,11 @@ function candidates(ev) {
   else facts.push('Head-to-head: no meetings found');
 
   const push = (m, p, why) => {
-    if (!(p > 0.01 && p < 0.99) || !(m.odds > 1)) return;
+    if (!(p > 0.01 && p < 0.99) || !Number.isFinite(m.odds) || !(m.odds > 1) || m.odds >= 1000) return;
     out.push({
       evKey: ev.key, sport, league: ev.league, country: ev.country, home: ev.home, away: ev.away, ts: ev.ts, url: ev.url,
       market: m.title, outcome: m.label, odds: m.odds, bb: m.i, p, n,
+      marketType: m.type, stat: m.stat, side: m.side, teamSide: m.teamSide, line: m.line, catalogId: m.catalogId,
       score: p * (0.55 + 0.45 * conf) + 0.4 * Math.max(0, p * m.odds - 1), reason: why, facts,
     });
   };
@@ -146,6 +148,20 @@ function candidates(ev) {
       const q = m.labelSide === 'N' ? 1-p : p;
       push(m, q, `${m.teamSide === 'H' ? ev.home : ev.away} to score: estimated from displayed goals-scored average (${lam.toFixed(2)}).`);
     }
+    for (const m of mk.filter((x) => x.type === 'HALF2_OU' && x.side && x.line != null)) {
+      const line = String(m.line).replace('.', '\\s*');
+      const po = pctFor(st, new RegExp('(?:second half|2nd half).*over\\s*' + line + '|over\\s*' + line + '.*(?:second half|2nd half)'));
+      if (po == null) continue;
+      const q = m.side === 'O' ? po : 1 - po;
+      push(m, q, `Second-half ${m.side === 'O' ? 'over' : 'under'} ${m.line}: ${Math.round(100 * q)}% from displayed second-half statistics.`);
+    }
+    for (const m of mk.filter((x) => x.type === 'CLEAN_SHEET' && x.teamSide && x.side)) {
+      if (lamH == null || lamA == null) continue;
+      const oppLam = m.teamSide === 'H' ? lamA : lamH;
+      const pClean = Math.exp(-oppLam);
+      const q = m.side === 'Y' ? pClean : 1 - pClean;
+      push(m, q, `${m.teamSide === 'H' ? ev.home : ev.away} clean sheet ${m.side === 'Y' ? 'yes' : 'no'}: estimated from displayed goal averages (opponent expected ${oppLam.toFixed(2)}).`);
+    }
     for (const m of mk.filter((x) => x.type === 'TEAM_OU' && x.side && x.line != null)) {
       if (lamH == null || lamA == null) continue;
       const lam = m.teamSide === 'A' ? lamA : lamH;
@@ -161,7 +177,15 @@ function candidates(ev) {
       push(m, q, `${m.side === 'O' ? 'Over' : 'Under'} ${m.line}: ${Math.round(100 * q)}% from the shown statistics.`);
     }
   }
-  if (!out.length) ev.rejected = 'no market has enough evidence';
+  if (!out.length) {
+    ev.rejected = 'no market has enough evidence';
+    return out;
+  }
+  if (req && Array.isArray(req.markets) && req.markets.length) {
+    const filtered = out.filter((c) => matchesMarketFilter(c, req.markets));
+    if (!filtered.length) ev.rejected = 'no offered market matched requested market filter';
+    return filtered;
+  }
   return out;
 }
 

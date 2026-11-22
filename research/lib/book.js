@@ -3,9 +3,9 @@
 const { sleep, norm, walk } = require('./util');
 const ex = require('./extract');
 
-async function addLeg(site, page, leg) {
+async function addLeg(site, page, leg, scope = 'today', req = null) {
   const ev = { sport: leg.sport, home: leg.home, away: leg.away, url: leg.url, league: leg.league };
-  if (!(await site.openEvent(page, ev))) return { ok: false, why: 'could not open the match' };
+  if (!(await site.openEvent(page, ev, scope, req))) return { ok: false, why: 'could not open the match' };
   const list = await ex.markets(page, ev);
   const same = (a, b) => norm(a) === norm(b);
   const m = list.find((x) => same(x.title, leg.market) && same(x.label, leg.outcome) && x.i >= 0) ||
@@ -89,13 +89,13 @@ async function share(site, page, legs) {
   return out;
 }
 
-async function book(site, legs, deadline) {
+async function book(site, legs, deadline, scope = 'today', req = null) {
   const res = { ok: false, code: '', link: '', added: 0, total: 1, why: '', changes: [] };
   const page = await site.newPage();
   try {
     for (const leg of legs) {
       if (Date.now() > deadline) { res.why = 'time ran out while building the betslip'; break; }
-      const r = await addLeg(site, page, leg).catch((e) => ({ ok: false, why: 'error ' + e.message }));
+      const r = await addLeg(site, page, leg, scope, req).catch((e) => ({ ok: false, why: 'error ' + e.message }));
       console.log(`[book] ${leg.home} v ${leg.away}: ${r.ok ? 'added @' + r.odds : 'FAILED ' + r.why}`);
       if (!r.ok) { res.why = `${leg.home} v ${leg.away}: ${r.why}`; break; }
       res.added++;

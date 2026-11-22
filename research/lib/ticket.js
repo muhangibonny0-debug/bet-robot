@@ -1,15 +1,31 @@
 'use strict';
 const { CFG } = require('./analyze');
 function bandFor(target) {
+  if (target <= 10) {
+    return {
+      min: target,
+      preferredMax: Math.round(target * 1.15 * 100) / 100,
+      hardMax: Math.round(target * 1.35 * 100) / 100,
+    };
+  }
+  if (target <= 65) {
+    return {
+      min: target,
+      preferredMax: target + Math.min(2.9, target * 0.05),
+      hardMax: target + Math.min(5, target * (5 / 60), 65 - target),
+    };
+  }
   return {
     min: target,
-    preferredMax: target + Math.min(2.9, target * 0.05),
-    hardMax: target <= 65 ? target + Math.min(5, target * (5 / 60), 65 - target) : target + Math.min(5, target * (5 / 60)),
+    preferredMax: Math.round(target * 1.10 * 100) / 100,
+    hardMax: Math.round(target * 1.25 * 100) / 100,
   };
 }
 function build(cands, req) {
   const best = new Map();
   for (const c of cands) {
+    if (!c || !c.evKey) continue;
+    if (!Number.isFinite(c.p) || !Number.isFinite(c.odds)) continue;
     if (c.p < (CFG.minProb[c.sport] || 0.5) || c.odds < CFG.minOdds || c.odds > CFG.maxOdds) continue;
     const old = best.get(c.evKey);
     if (!old || c.score > old.score) best.set(c.evKey, c);

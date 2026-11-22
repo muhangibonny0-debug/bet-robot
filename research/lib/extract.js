@@ -1,16 +1,20 @@
 'use strict';
 // statistics and markets of one opened match. Nothing is invented: what is not shown is recorded as missing.
 const { sleep, norm, sameTeam, walk } = require('./util');
+const { catalogFor } = require('./markets');
 
 const STAT_TAB = /^(stats?|statistics|h2h|head ?to ?head|analysis|form|match stats?)$/i;
 const MKT_TAB = /^(markets?|all markets|odds|betting|all)$/i;
 
 const clickFirst = async (page, re) => {
   const loc = page.getByText(re);
-  const n = Math.min(await loc.count().catch(() => 0), 6);
+  const n = Math.min(await loc.count().catch(() => 0), 8);
   for (let i = 0; i < n; i++) {
     const el = loc.nth(i);
-    if (await el.isVisible().catch(() => false)) { await el.click({ timeout: 2500 }).catch(() => {}); return true; }
+    if (await el.isVisible().catch(() => false)) {
+      const ok = await el.click({ timeout: 3500, force: true }).then(() => true).catch(() => false);
+      if (ok) return true;
+    }
   }
   return false;
 };
@@ -124,7 +128,24 @@ async function stats(page, ev) {
   return st;
 }
 
-async function openMarkets(page) { await clickFirst(page, MKT_TAB); await sleep(1200); }
+async function openMarkets(page) {
+  // BangBet match pages land on Markets by default; only click the Markets tab if no market prices are visible yet
+  const alreadyVisible = await page.evaluate(() => {
+    const txt = document.body ? document.body.innerText : '';
+    return /\b1x2\b/i.test(txt) && /\d{1,2}\.\d{2}/.test(txt);
+  }).catch(() => false);
+  if (!alreadyVisible) {
+    await clickFirst(page, MKT_TAB);
+    await sleep(900);
+  }
+  // Expand any collapsed market sections cleanly (bounded to visible toggles)
+  await page.evaluate(() => {
+    document.querySelectorAll('[aria-expanded="false"]').forEach((e) => {
+      try { e.click(); } catch (_) {}
+    });
+  }).catch(() => {});
+  await sleep(250);
+}
 
 async function expandAll(page) {
   for (let r = 0; r < 3; r++) {
@@ -158,9 +179,11 @@ async function expandAll(page) {
   await page.evaluate(() => { window.scrollTo(0, 0); document.querySelectorAll('*').forEach(e => { if (e.scrollTop > 0) e.scrollTop = 0; }); }).catch(() => {});
 }
 
-// every price on the page with the title of its market and its label; elements are tagged for clicking
+// every price on the page with the title of its market and its label; elements are tagged for clicking.
+// Handles both inline-label buttons ("1 1.81", "1X 1.22") and BangBet table rows ("0.5 | 1.06 | 12.00" under "over | under").
 const MKT_JS = () => {
   const priceRe = /^(.*?)(\d{1,3}\.\d{2})$/;
+  const lineRe = /^[+-]?\d+(?:\.\d+)?$|^\d+:\d+$/;
   const cells = [];
   for (const el of document.querySelectorAll('div,span,button,li,a')) {
     if (el.children.length > 3) continue;
@@ -170,7 +193,7 @@ const MKT_JS = () => {
     if (!m) continue;
     const b = el.getBoundingClientRect();
     if (b.width < 24 || b.height < 18) continue;
-    cells.push({ el, label: m[1].trim(), odds: parseFloat(m[2]), t });
+    cells.push({ el, label: m[1].trim(), odds: parseFloat(m[2]), t, x: b.left + b.width / 2, y: b.top + b.height / 2 });
   }
   const keep = cells.filter((c) => !cells.some((o) => o !== c && o.el.contains(c.el) && o.t === c.t));
   const out = [];
@@ -179,16 +202,43 @@ const MKT_JS = () => {
     let g = c.el.parentElement;
     let title = '';
     let gi = -1;
-    for (let up = 0; g && up < 6; up++, g = g.parentElement) {
+    let label = c.label;
+    for (let up = 0; g && up < 7; up++, g = g.parentElement) {
       const inside = keep.filter((o) => g.contains(o.el));
       if (inside.length >= 2 && inside.length <= 60) {
-        const texts = new Set(inside.flatMap((o) => [o.t, o.label, String(o.odds)]));
-        const line = (g.innerText || '').split('\n').map((s) => s.trim()).filter(Boolean)
-          .find((s) => !texts.has(s) && !/^\d{1,3}\.\d{2}$/.test(s) && s.length < 80);
-        if (line) { title = line; gi = inside.indexOf(c); break; }
+        const texts = new Set(inside.flatMap((o) => [o.t, o.label, String(o.odds), o.odds.toFixed(2)]));
+        const gLines = (g.innerText || '').split('\n').map((s) => s.trim()).filter(Boolean);
+        const head = gLines.find((s) =>
+          !texts.has(s) && !/^\d{1,3}\.\d{2}$/.test(s) && !lineRe.test(s) &&
+          !/^(over|under|home|draw|away|bet assist|yes|no|1|x|2)$/i.test(s) && s.length < 80);
+        if (head) {
+          title = head;
+          gi = inside.indexOf(c);
+          // For table-layout markets (e.g. Total / Liverpool FC total / Asian Handicap) where price cells have no inline label,
+          // resolve column header ("over"/"under"/"home"/"draw"/"away") + row line ("0.5"/"1.5"/"-0.5") by geometry.
+          if (!label) {
+            const sameRow = inside.filter((o) => Math.abs(o.y - c.y) < 16).sort((a, b) => a.x - b.x);
+            const colIdx = sameRow.indexOf(c);
+            const colHeads = gLines.filter((s) => /^(over|under|home|draw|away)$/i.test(s));
+            const rowParent = c.el.parentElement;
+            const rowTokens = rowParent ? (rowParent.innerText || '').split('\n').map((s) => s.trim()).filter(Boolean) : [];
+            const rowLine = rowTokens.find((s) => lineRe.test(s) && !/^\d{1,3}\.\d{2}$/.test(s)) || '';
+            if (colHeads.length === sameRow.length && colIdx >= 0) {
+              const colName = colHeads[colIdx];
+              label = rowLine ? `${colName} ${rowLine}` : colName;
+            } else if (rowLine && sameRow.length === 2 && /total|over|under|goal|corner|card/i.test(head)) {
+              label = `${colIdx === 0 ? 'over' : 'under'} ${rowLine}`;
+            } else if (rowLine && sameRow.length === 2 && /handicap/i.test(head)) {
+              label = `${colIdx === 0 ? 'home' : 'away'} ${rowLine}`;
+            } else if (rowLine && sameRow.length === 3 && /handicap/i.test(head)) {
+              label = `${['home', 'draw', 'away'][colIdx] || ''} ${rowLine}`.trim();
+            }
+          }
+          break;
+        }
       }
     }
-    out.push({ i, title, label: c.label, odds: c.odds, pos: gi });
+    out.push({ i, title, label, odds: c.odds, pos: gi });
   });
   return out;
 };
@@ -214,6 +264,10 @@ function marketsFromNet(net) {
 function classify(title, label, ev) {
   const t = norm(title);
   const l = norm(label);
+  const wrap = (res) => {
+    const cat = catalogFor(res);
+    return cat ? { ...res, catalogId: cat.id, catalogName: cat.name } : res;
+  };
   const side = () => {
     if (/^(1|home)$/.test(l)) return 'H';
     if (/^(2|away)$/.test(l)) return 'A';
@@ -223,37 +277,90 @@ function classify(title, label, ev) {
     return '';
   };
   const teamSide = () => norm(ev.away).split(' ').some(w => w.length > 3 && t.includes(w)) ? 'A' : 'H';
-  const ou = /(over|under)\s*([0-9]+(?:\.[0-9]+)?)/.exec(l);
-  const tl = /(over|under)/.test(l) ? /([0-9]+(?:\.[0-9]+)?)/.exec(t) : null;
+  // Parse decimal lines from raw lowercase text before norm() strips decimal points ("0.5" -> "0 5").
+  const rawTitle = String(title || '').toLowerCase();
+  const rawLabel = String(label || '').toLowerCase();
+  const ou = /(over|under)\s*([0-9]+(?:\.[0-9]+)?)/.exec(rawLabel);
+  const tl = /(over|under)/.test(rawLabel) ? /([0-9]+(?:\.[0-9]+)?)/.exec(rawTitle) : null;
   const line = ou ? parseFloat(ou[2]) : (tl ? parseFloat(tl[1]) : null);
   const direction = ou ? ou[1] : (/over/.test(l) ? 'over' : 'under');
 
-  if (/(first half|1st half|half time|halftime)/.test(t) && line != null)
-    return { type: 'HALF_OU', side: direction === 'over' ? 'O' : 'U', line };
-  if (/(corner|card|booking)/.test(t) && line != null)
-    return { type: 'STAT_OU', stat: /corner/.test(t) ? 'corner' : 'card', side: direction === 'over' ? 'O' : 'U', line };
-  if (/(team total|team goals|home team goals|away team goals)/.test(t) && line != null)
-    return { type: 'TEAM_OU', teamSide: teamSide(), side: direction === 'over' ? 'O' : 'U', line };
-  if (/to score/.test(t) && /^(yes|no)$/.test(l))
-    return { type: 'TEAM_SCORE', teamSide: teamSide(), labelSide: l === 'no' ? 'N' : 'Y' };
+  if (/(first half|1st half|half time|halftime)/.test(t) && line != null && !/(corner|card|booking)/.test(t))
+    return wrap({ type: 'HALF_OU', side: direction === 'over' ? 'O' : 'U', line });
+  if (/(second half|2nd half)/.test(t) && line != null && !/(corner|card|booking)/.test(t))
+    return wrap({ type: 'HALF2_OU', side: direction === 'over' ? 'O' : 'U', line });
+  if (/(corner|card|booking|shot|offside|foul)/.test(t) && line != null) {
+    const stat = /corner/.test(t) ? 'corner' : (/card|booking/.test(t) ? 'card' : (/shot/.test(t) ? 'shot' : (/offside/.test(t) ? 'offside' : 'foul')));
+    return wrap({ type: 'STAT_OU', stat, side: direction === 'over' ? 'O' : 'U', line });
+  }
+  if (/(clean sheet)/.test(t) && /^(yes|no)$/.test(l))
+    return wrap({ type: 'CLEAN_SHEET', teamSide: /\baway\b/.test(t) ? 'A' : (/\bhome\b/.test(t) ? 'H' : teamSide()), side: l === 'no' ? 'N' : 'Y' });
+  if (/(win to nil)/.test(t))
+    return wrap({ type: 'WIN_TO_NIL', teamSide: /\baway\b/.test(t) ? 'A' : (/\bhome\b/.test(t) ? 'H' : teamSide()), side: /^(no)$/.test(l) ? 'N' : 'Y' });
+  if (/(team total|team goals|home team goals|away team goals|total home|total away)/.test(t) && line != null)
+    return wrap({ type: 'TEAM_OU', teamSide: /\baway\b/.test(t) ? 'A' : (/\bhome\b/.test(t) ? 'H' : teamSide()), side: direction === 'over' ? 'O' : 'U', line });
+  if (/to score/.test(t) && /^(yes|no)$/.test(l) && !/both teams/.test(t))
+    return wrap({ type: 'TEAM_SCORE', teamSide: /\baway\b/.test(t) ? 'A' : (/\bhome\b/.test(t) ? 'H' : teamSide()), labelSide: l === 'no' ? 'N' : 'Y' });
   if (/win either half|to win a half|to win any half/.test(t))
-    return { type: 'WIN_HALF', side: side() };
-  if (/(half|1st|2nd|first|second|corner|card|booking|penalt|offside|player|scorer|exact|correct|margin|handicap|quarter|set |inning|period)/.test(t))
+    return wrap({ type: 'WIN_HALF', side: side() });
+  if (/win both halves/.test(t))
+    return wrap({ type: 'WIN_BOTH_HALVES', side: side() });
+  if (/double chance/.test(t) && /(both teams|btts|gg)/.test(t))
+    return wrap({ type: 'DC_BTTS' });
+  if (/double chance/.test(t) && (ou || tl || /over|under/.test(t)))
+    return wrap({ type: 'DC_OU', line });
+  if (/(1x2|result|winner)/.test(t) && /(both teams|btts|gg)/.test(t))
+    return wrap({ type: 'BTTS_RESULT' });
+  if (/(1x2|result|winner)/.test(t) && (ou || tl))
+    return wrap({ type: 'RESULT_OU', line });
+  if (/(half time full time|halftime fulltime|ht ft)/.test(t))
+    return wrap({ type: 'HT_FT' });
+  if (/(first half|1st half|half time|halftime)/.test(t) && /(both teams|btts|gg)/.test(t))
+    return wrap({ type: 'HALF_BTTS', side: /^(yes|gg)$/.test(l) ? 'Y' : (/^(no|ng)$/.test(l) ? 'N' : '') });
+  if (/(second half|2nd half)/.test(t) && /(both teams|btts|gg)/.test(t))
+    return wrap({ type: 'HALF2_BTTS', side: /^(yes|gg)$/.test(l) ? 'Y' : (/^(no|ng)$/.test(l) ? 'N' : '') });
+  if (/(first half|1st half|half time|halftime)/.test(t) && /(1x2|result|winner)/.test(t))
+    return wrap({ type: 'HALF_WIN', side: side() });
+  if (/(second half|2nd half)/.test(t) && /(1x2|result|winner)/.test(t))
+    return wrap({ type: 'HALF2_WIN', side: side() });
+  if (/(odd even|odd\/even)/.test(t))
+    return wrap({ type: 'ODD_EVEN', side: /odd/.test(l) ? 'O' : (/even/.test(l) ? 'E' : '') });
+  if (/highest scoring half/.test(t))
+    return wrap({ type: 'HIGHEST_HALF' });
+  if (/(asian handicap|handicap|spread|puck line|run line)/.test(t))
+    return wrap({ type: /european|3 way|3-way/.test(t) ? 'EU_HANDICAP' : 'HANDICAP', side: side() });
+  if (/(first team to score|1st goal)/.test(t))
+    return wrap({ type: 'FIRST_TO_SCORE', side: side() });
+  if (/(last team to score|last goal)/.test(t))
+    return wrap({ type: 'LAST_TO_SCORE', side: side() });
+  if (/(multi goals|multigoals|goal range|goals range)/.test(t))
+    return wrap({ type: 'MULTI_GOALS' });
+  if (/(exact goals|exact total goals)/.test(t))
+    return wrap({ type: 'EXACT_GOALS' });
+  if (/correct score/.test(t))
+    return wrap({ type: 'CORRECT_SCORE' });
+  if (/red card/.test(t))
+    return wrap({ type: 'RED_CARD' });
+  if (/penalt/.test(t))
+    return wrap({ type: 'PENALTY' });
+  if (/(half|1st|2nd|first|second|corner|card|booking|offside|player|scorer|exact|margin|quarter|set |inning|period)/.test(t))
     return { type: 'OTHER' };
   if (/double chance/.test(t)) {
     const s = l.replace(/\s/g, '');
-    return { type: 'DC', side: s === '1x' || /homeordraw/.test(s) ? '1X' : (s === 'x2' || /draworaway/.test(s) ? 'X2' : (s === '12' || /homeoraway/.test(s) ? '12' : '')) };
+    return wrap({ type: 'DC', side: s === '1x' || /homeordraw/.test(s) ? '1X' : (s === 'x2' || /draworaway/.test(s) ? 'X2' : (s === '12' || /homeoraway/.test(s) ? '12' : '')) });
   }
-  if (/draw no bet/.test(t)) return { type: 'DNB', side: side() };
-  if (/(both teams to score|btts|gg ng)/.test(t)) return { type: 'BTTS', side: /^(yes|gg)$/.test(l) ? 'Y' : (/^(no|ng)$/.test(l) ? 'N' : '') };
-  if ((ou || tl) && /(total|over|under|goals|points|runs)/.test(t)) {
+  if (/draw no bet/.test(t)) return wrap({ type: 'DNB', side: side() });
+  if (/(both teams to score|btts|gg ng)/.test(t)) return wrap({ type: 'BTTS', side: /^(yes|gg)$/.test(l) ? 'Y' : (/^(no|ng)$/.test(l) ? 'N' : '') });
+  if ((ou || tl) && /(total|over|under|goals|points|runs|games)/.test(t)) {
     const homeWord = norm(ev.home).split(' ').some((w) => w.length > 3 && t.includes(w));
     const awayWord = norm(ev.away).split(' ').some((w) => w.length > 3 && t.includes(w));
-    if (homeWord || awayWord) return { type: 'TEAM_OU', teamSide: awayWord ? 'A' : 'H', side: direction === 'over' ? 'O' : 'U', line };
-    return { type: 'OU', side: direction === 'over' ? 'O' : 'U', line };
+    if (homeWord || awayWord) return wrap({ type: 'TEAM_OU', teamSide: awayWord ? 'A' : 'H', side: direction === 'over' ? 'O' : 'U', line });
+    return wrap({ type: 'OU', side: direction === 'over' ? 'O' : 'U', line });
   }
+  if (/\b[123]up\b|\b1x2\s*[123]up\b/.test(t))
+    return { type: 'WIN_UP', side: side() };
   if (/(1x2|match result|match winner|moneyline|full time result|to win|^result$|^winner$|^full time$|regular time)/.test(t))
-    return { type: 'WIN', side: side() };
+    return wrap({ type: 'WIN', side: side() });
   return { type: 'OTHER' };
 }
 
@@ -272,7 +379,9 @@ async function markets(page, ev) {
     }
   }
   if (!list.length) list = marketsFromNet(page.net);
-  return list.filter((m) => m.title).map((m) => ({ ...m, ...classify(m.title, m.label, ev) }));
+  return list
+    .filter((m) => m.title && Number.isFinite(m.odds) && m.odds > 1 && m.odds < 1000 && !/suspend|lock/i.test(`${m.title} ${m.label}`))
+    .map((m) => ({ ...m, ...classify(m.title, m.label, ev) }));
 }
 
 module.exports = {

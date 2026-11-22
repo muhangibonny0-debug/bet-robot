@@ -44,7 +44,7 @@ jobs:
       - name: Get the app code
         uses: actions/checkout@v4
         with:
-          repository: muhangibonny0-debug/com.bonny.bet_brain
+          repository: muhangibonny257-dev/com.bonny.bet_brain
           token: ${{ secrets.APP_REPO_TOKEN }}
           path: app
 
