@@ -127,7 +127,8 @@ async function main() {
     id: ID, status: 'running', stage: 'Understanding request', stages: [], request: req, started, updated: started,
     counts: {
       discovered: 0, inWindow: 0, displayed: 0, opened: 0,
-      statsInspected: 0, withStats: 0, marketsInspected: 0, withMarkets: 0,
+      statsInspected: 0, statsCaptured: 0, teamsIdentified: 0, historicalExtracted: 0, withStats: 0,
+      marketsInspected: 0, withMarkets: 0,
       evaluated: 0, candidates: 0, accepted: 0, selections: 0,
       rejected: 0, rejectionReasons: {},
       combinedOdds: 0, targetOdds: req.target,
@@ -209,7 +210,7 @@ async function main() {
     const cands = [];
     let evIdx = 0;
     let targetMet = false;
-    const CONCURRENCY = 2;
+    const CONCURRENCY = 3;
     const workerPages = [];
     for (let w = 0; w < CONCURRENCY; w++) workerPages.push(await site.newPage());
 
@@ -380,6 +381,9 @@ async function main() {
     const why = {};
     for (const e of allEvents) if (e.rejected) why[e.rejected] = (why[e.rejected] || 0) + 1;
     state.counts.opened = allEvents.filter((e) => e.opened).length;
+    state.counts.statsCaptured = allEvents.reduce((acc, e) => acc + ((e.stats && e.stats.responseCount) || 0), 0);
+    state.counts.teamsIdentified = allEvents.filter((e) => e.stats && e.stats.categories && e.stats.categories.teamIdentity).length;
+    state.counts.historicalExtracted = allEvents.filter((e) => e.stats && e.stats.categories && (e.stats.categories.recentMatches || e.stats.categories.headToHead)).length;
     state.counts.withStats = allEvents.filter((e) => e.stats && e.stats.available).length;
     state.counts.withMarkets = allEvents.filter((e) => e.markets && e.markets.length).length;
     state.counts.evaluated = allEvents.filter((e) => e.evaluated).length;
@@ -488,6 +492,7 @@ async function main() {
     }
     const recon = {
       counts: state.counts, discovery: site.discovery, gateway: state.gateway,
+      gismoCache: site.gismoCache ? site.gismoCache.summary() : null,
       blockedRequests: site.blockedRequests, notes: site.notes, apis: [...site.apis].slice(0, 40),
     };
     fs.writeFileSync(path.join(OUT, 'recon.json'), JSON.stringify(recon, null, 1));

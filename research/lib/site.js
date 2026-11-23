@@ -13,6 +13,7 @@ try {
 const fs = require('fs');
 const path = require('path');
 const { sleep, norm, keyTok, walk } = require('./util');
+const { GismoCache, GismoPageObserver } = require('./gismo');
 
 const SITE = process.env.BANGBET_URL || 'https://www.bangbet.com/ug-m';
 const OUT = path.join(__dirname, '..', 'out');
@@ -187,6 +188,7 @@ class Site {
     this.browser = null; this.ctx = null; this.notes = [];
     this.apis = new Set(); this.discovery = {};
     this.blockedRequests = 0;
+    this.gismoCache = new GismoCache();
   }
 
   async start(opts = {}) {
@@ -226,6 +228,7 @@ class Site {
     page.net = [];
     page.pendingMatchList = 0;
     page.lastMatchListEmpty = false;
+    page.gismo = new GismoPageObserver(page, this.gismoCache);
     page.on('dialog', (d) => d.dismiss().catch(() => {}));
     page.on('request', (req) => {
       if (/\/api\/bet\/match\/list/i.test(req.url())) page.pendingMatchList++;
@@ -583,6 +586,7 @@ class Site {
 
   // opens a match: by its own address, or by finding its row again and clicking it
   async openEvent(page, ev, scope = 'today', req = null) {
+    if (page.gismo) page.gismo.beginFixture(ev);
     const verified = async (strict = false) => {
       const body = await page.evaluate(() => (document.body ? document.body.innerText : '')).catch(() => '');
       const t = norm(body);

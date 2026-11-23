@@ -327,3 +327,69 @@ test('PhoneGatewayServer counts exact upload/download bytes, warns at 80%, and s
     await gw.close();
   }
 });
+
+test('Gismo classifier, strict home/away UID association (arrival-order independent), and mismatch rejection', () => {
+  const { GismoCache, GismoPageObserver, classifyEndpoint } = require('../lib/gismo');
+  const fakePage = { on() {}, off() {} };
+  const cache = new GismoCache();
+  const obs = new GismoPageObserver(fakePage, cache);
+
+  // Endpoint classification
+  assert.equal(classifyEndpoint('https://ws-fn-cdn001.akamaized.net/common/en/Etc:UTC/gismo/stats_season_teamscoringconceding/140786/2959/-1', { doc: [{ event: 'stats_season_teamscoringconceding', data: { team: { _id: 2959 }, stats: {} } }] }).category, 'team_scoring_conceding');
+  assert.equal(classifyEndpoint('https://ws-fn-cdn001.akamaized.net/common/en/Etc:UTC/gismo/stats_team_versusrecent/2959/3002', { doc: [{ event: 'stats_team_versusrecent', data: { matches: [] } }] }).category, 'head_to_head');
+  assert.equal(classifyEndpoint('https://doubleclick.net/pixel', {}).category, 'ignored');
+
+  // Fixture: Feyenoord (2959, Home) vs FC Porto (3002, Away) — feed AWAY (3002) FIRST to prove arrival order never swaps teams!
+  const ev = { home: 'Feyenoord', away: 'FC Porto', url: 'https://www.bangbet.com/ug-m/sport/Football/match?matchId=sr%3Amatch%3A99001122' };
+  obs.beginFixture(ev);
+  obs._storeInCache({
+    category: 'team_scoring_conceding', args: ['140786', '3002', '-1'],
+    data: { team: { _id: 3002, name: 'FC Porto' }, stats: { totalmatches: { total: 10 }, scoring: { goalsscored: { total: 12 }, bothteamsscored: { total: 5 } }, conceding: { goalsconceded: { total: 8 } } } },
+  });
+  obs._storeInCache({
+    category: 'team_scoring_conceding', args: ['140786', '2959', '-1'],
+    data: { team: { _id: 2959, name: 'Feyenoord' }, stats: { totalmatches: { total: 10 }, scoring: { goalsscored: { total: 24 }, bothteamsscored: { total: 6 } }, conceding: { goalsconceded: { total: 9 } } } },
+  });
+  obs._storeInCache({
+    category: 'head_to_head', args: ['2959', '3002'],
+    data: { matches: [{ _id: 1, teams: { home: { uid: 2959, name: 'Feyenoord' }, away: { uid: 3002, name: 'FC Porto' } }, result: { home: 2, away: 0 } }] },
+  });
+  const miRec = {
+    category: 'match_info', args: ['99001122'], pattern: '/gismo/match_info',
+    data: {
+      match: { _id: 99001122, _seasonid: 140786, teams: { home: { uid: 2959, name: 'Feyenoord' }, away: { uid: 3002, name: 'FC Porto' } } },
+      tournament: { name: 'UEFA Europa League' }, realcategory: { name: 'International' },
+    },
+  };
+  obs.records.push(miRec);
+  obs._storeInCache(miRec);
+
+  const st = obs.assemble(ev);
+  assert.equal(st.available, true);
+  assert.equal(st.status, 'complete');
+  assert.equal(st.homeTeam.uid, 2959);
+  assert.equal(st.awayTeam.uid, 3002);
+  assert.equal(st.goals.hFor, 2.4);
+  assert.equal(st.goals.aFor, 1.2);
+  assert.deepEqual(st.h2h, { n: 1, H: 1, X: 0, A: 0 });
+  assert.equal(st.competition, 'UEFA Europa League');
+
+  // Mismatched fixture team names must be rejected as association_failed
+  const wrongEv = { home: 'Arsenal', away: 'Chelsea', url: 'https://www.bangbet.com/ug-m/sport/Football/match?matchId=sr%3Amatch%3A99001122' };
+  const bad = obs.assemble(wrongEv);
+  assert.equal(bad.available, false);
+  assert.equal(bad.status, 'association_failed');
+});
+
+test('GismoCache tracks hits, misses, and TTL expiry accurately', async () => {
+  const { GismoCache } = require('../lib/gismo');
+  const cache = new GismoCache();
+  assert.equal(cache.get('missing_key'), null);
+  assert.equal(cache.misses, 1);
+  cache.set('k1', { ok: true }, 50);
+  assert.deepEqual(cache.get('k1'), { ok: true });
+  assert.equal(cache.hits, 1);
+  await new Promise((r) => setTimeout(r, 70));
+  assert.equal(cache.get('k1'), null);
+  assert.equal(cache.evictions, 1);
+});

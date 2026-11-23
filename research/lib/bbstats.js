@@ -282,34 +282,60 @@ function parse(text, ev) {
 }
 
 async function stats(page, ev, legacy) {
+  const t0 = Date.now();
+  // 1) Fast path: check if Gismo JSON responses (or cache) already satisfy this fixture
+  let gismoSt = page.gismo ? page.gismo.assemble(ev) : null;
   let clicked = false;
-  for (let i = 0; i < 3 && !clicked; i++) {
-    const marked = await page.evaluate(MARK).catch(() => false);
-    if (marked) {
-      clicked = await page.locator('[data-bbstats="1"]').first().click({ timeout: 4500, force: true }).then(() => true).catch(() => false);
+
+  if (!gismoSt || gismoSt.status !== 'complete') {
+    // 2) One controlled Stats-tab interaction to trigger BangBet's Gismo statistics requests
+    for (let i = 0; i < 2 && !clicked; i++) {
+      const marked = await page.evaluate(MARK).catch(() => false);
+      if (marked) {
+        clicked = await page.locator('[data-bbstats="1"]').first().click({ timeout: 4000, force: true }).then(() => true).catch(() => false);
+      }
+      if (!clicked) await sleep(500);
     }
-    if (!clicked) await sleep(800);
+
+    // 3) Wait strictly for underlying Gismo JSON responses (exiting immediately once complete)
+    if (page.gismo) {
+      for (let i = 0; i < 14; i++) {
+        await sleep(350);
+        gismoSt = page.gismo.assemble(ev);
+        if (gismoSt.status === 'complete') break;
+        if (i === 5 && gismoSt.responseCount === 0 && !clicked) {
+          if (await page.evaluate(MARK).catch(() => false)) {
+            clicked = await page.locator('[data-bbstats="1"]').first().click({ timeout: 3000, force: true }).then(() => true).catch(() => false);
+          }
+        }
+      }
+    }
   }
+
+  if (gismoSt && gismoSt.available) {
+    // Optionally enrich with DOM win probability if already rendered (zero extra wait)
+    try {
+      const frames = await readFrames(page);
+      const pick = best(frames);
+      if (pick.score > 0) {
+        const domSt = parse(pick.text, ev);
+        if (domSt.probs && !gismoSt.probs) gismoSt.probs = domSt.probs;
+        if (!gismoSt.homeForm && domSt.homeForm) gismoSt.homeForm = domSt.homeForm;
+        if (!gismoSt.awayForm && domSt.awayForm) gismoSt.awayForm = domSt.awayForm;
+      }
+    } catch (_) {}
+    gismoSt.tab = clicked;
+    gismoSt.extractMs = Date.now() - t0;
+    return gismoSt;
+  }
+
+  // 4) Fallback to visual DOM extraction only when Gismo JSON was unavailable
   let frames = [], pick = { score: -1, text: '', where: '' };
-  // Wait up to ~8 seconds for Sportradar/BangBet async stats widget to finish loading,
-  // returning early as soon as rich stats (score >= 3) appear.
-  for (let i = 0; i < 11; i++) {
-    await sleep(i === 0 ? 800 : 750);
+  for (let i = 0; i < 5; i++) {
+    await sleep(i === 0 ? 600 : 500);
     frames = await readFrames(page);
     pick = best(frames);
     if (pick.score >= 3) break;
-    if (i === 2 && pick.score <= 0) {
-      // Re-click Stats in case the first click landed before Vue attached the tab listener
-      if (await page.evaluate(MARK).catch(() => false)) {
-        await page.locator('[data-bbstats="1"]').first().click({ timeout: 3000, force: true }).catch(() => {});
-      }
-      await page.getByText(/^h2h$/i).first().click({ timeout: 1500, force: true }).catch(() => {});
-    } else if (i === 2) {
-      await page.getByText(/^h2h$/i).first().click({ timeout: 1500, force: true }).catch(() => {});
-    }
-    if (i === 5) {
-      await page.evaluate(() => window.scrollBy(0, Math.round(innerHeight * 0.55))).catch(() => {});
-    }
   }
   let st = parse(pick.text, ev);
   if (!st.available && legacy) {
@@ -318,7 +344,17 @@ async function stats(page, ev, legacy) {
       if (old && old.available) st = { ...old, source: 'legacy' };
     } catch (_) {}
   }
+  if (!st.available && gismoSt) {
+    st.status = gismoSt.status;
+    st.endpointsCaptured = gismoSt.endpointsCaptured;
+    st.responseCount = gismoSt.responseCount;
+  } else if (st.available) {
+    st.status = 'partial';
+  } else {
+    st.status = 'unavailable';
+  }
   st.tab = clicked;
+  st.extractMs = Date.now() - t0;
   st.where = pick.where;
   st.frames = frames.map((f) => f.url.slice(0, 100) + ' visible=' + f.visible.length + ' deep=' + f.deep.length).slice(0, 8);
   st.raw = pick.text.slice(0, 1800);
