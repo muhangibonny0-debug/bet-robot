@@ -90,7 +90,29 @@ function validateRequest(P, req) {
 }
 
 const TOP = /(premier|champions|europa|la liga|serie a|bundesliga|ligue 1|eredivisie|primeira|championship|nba|euroleague|atp|wta|nhl|mlb)/i;
-const prio = (e) => (TOP.test(`${e.country} ${e.league}`) ? 0 : 1);
+const VIRTUAL_RE = /\b(srl|simulated\s+reality|virtual|e-?football|e-?soccer|esports?|cyber)\b/i;
+function isVirtualFixture(ev) {
+  if (!ev) return false;
+  const text = `${ev.country || ''} ${ev.league || ''} ${ev.home || ''} ${ev.away || ''}`;
+  return VIRTUAL_RE.test(text);
+}
+const prio = (e) => (!isVirtualFixture(e) && TOP.test(`${e.country} ${e.league}`) ? 0 : 1);
+
+function tallyRejections(allEvents, cands, state) {
+  const why = {};
+  for (const e of allEvents) if (e.rejected) why[e.rejected] = (why[e.rejected] || 0) + 1;
+  state.counts.opened = allEvents.filter((e) => e.opened).length;
+  state.counts.statsCaptured = allEvents.reduce((acc, e) => acc + ((e.stats && e.stats.responseCount) || 0), 0);
+  state.counts.teamsIdentified = allEvents.filter((e) => e.stats && e.stats.categories && e.stats.categories.teamIdentity).length;
+  state.counts.historicalExtracted = allEvents.filter((e) => e.stats && e.stats.categories && (e.stats.categories.recentMatches || e.stats.categories.headToHead)).length;
+  state.counts.withStats = allEvents.filter((e) => e.stats && e.stats.available).length;
+  state.counts.withMarkets = allEvents.filter((e) => e.markets && e.markets.length).length;
+  state.counts.evaluated = allEvents.filter((e) => e.evaluated).length;
+  state.counts.candidates = cands.length;
+  state.counts.rejected = allEvents.filter((e) => !!e.rejected).length;
+  state.counts.rejectionReasons = why;
+  return why;
+}
 
 async function notify(title, body, data = null) {
   const f = path.join(__dirname, '..', 'notify', 'out.json');
@@ -126,7 +148,7 @@ async function main() {
   const state = {
     id: ID, status: 'running', stage: 'Understanding request', stages: [], request: req, started, updated: started,
     counts: {
-      discovered: 0, inWindow: 0, displayed: 0, opened: 0,
+      discovered: 0, virtualExcluded: 0, inWindow: 0, displayed: 0, opened: 0,
       statsInspected: 0, statsCaptured: 0, teamsIdentified: 0, historicalExtracted: 0, withStats: 0,
       marketsInspected: 0, withMarkets: 0,
       evaluated: 0, candidates: 0, accepted: 0, selections: 0,
@@ -210,7 +232,9 @@ async function main() {
     const cands = [];
     let evIdx = 0;
     let targetMet = false;
-    const CONCURRENCY = 3;
+    // Use concurrency=1 over PhoneGateway to preserve mobile tunnel stability and latency;
+    // preserve concurrency=3 for Cloud Direct.
+    const CONCURRENCY = req.usePhoneGateway ? 1 : 3;
     const workerPages = [];
     for (let w = 0; w < CONCURRENCY; w++) workerPages.push(await site.newPage());
 
@@ -247,8 +271,8 @@ async function main() {
 
           state.counts.statsInspected++;
           ev.stats = await withTimeout(
-            ex.stats(page, ev),
-            15000,
+            ex.stats(page, ev, { viaPhoneGateway: req.usePhoneGateway }),
+            req.usePhoneGateway ? 20000 : 15000,
             'stats inspection timed out'
           ).catch((e) => {
             if (/timed out/i.test(e.message)) timedOut = true;
@@ -292,7 +316,14 @@ async function main() {
             const rawBatch = await site.collectNextBatch(listing, deadline, 30);
             state.counts.discovered += rawBatch.length;
 
-            const windowBatch = rawBatch
+            const realBatch = rawBatch.filter((e) => {
+              if (isVirtualFixture(e)) {
+                state.counts.virtualExcluded++;
+                return false;
+              }
+              return true;
+            });
+            const windowBatch = realBatch
               .filter((e) => !e.ts || (e.ts >= from && e.ts < to))
               .map((e) => ({ ...e, key: `${e.sport}:${norm(e.home)}:${norm(e.away)}:${evIdx++}` }));
             windowBatch.sort((a, b) => prio(a) - prio(b) || (a.ts || 9e15) - (b.ts || 9e15));
@@ -346,6 +377,7 @@ async function main() {
     }
 
     if (gw && gw.limitReached) {
+      tallyRejections(allEvents, cands, state);
       state.status = 'data_limit_reached';
       state.error = `Stopped forwarding research traffic at the configured mobile data limit (${gw.usedMb} / ${gw.limitMb} MB). Research did not complete.`;
       await stage('Stopped — mobile data limit reached');
@@ -357,6 +389,7 @@ async function main() {
       return;
     }
     if (gw && !gw.connected && !targetMet) {
+      tallyRejections(allEvents, cands, state);
       state.status = 'gateway_disconnected';
       state.error = `Phone gateway disconnected after transferring ${gw.usedMb} MB and did not reconnect. Research stopped without falling back to direct cloud browsing.`;
       await stage('Stopped — phone gateway disconnected');
@@ -369,6 +402,7 @@ async function main() {
     }
 
     if (!allEvents.length) {
+      tallyRejections(allEvents, cands, state);
       throw new Error('BangBet displayed no fixtures for the selected Time period. ' + site.notes.join(' | '));
     }
 
@@ -378,18 +412,7 @@ async function main() {
       Object.values(site.discovery).every((d) => d.exhausted);
 
     await stage('Evaluating candidate selections');
-    const why = {};
-    for (const e of allEvents) if (e.rejected) why[e.rejected] = (why[e.rejected] || 0) + 1;
-    state.counts.opened = allEvents.filter((e) => e.opened).length;
-    state.counts.statsCaptured = allEvents.reduce((acc, e) => acc + ((e.stats && e.stats.responseCount) || 0), 0);
-    state.counts.teamsIdentified = allEvents.filter((e) => e.stats && e.stats.categories && e.stats.categories.teamIdentity).length;
-    state.counts.historicalExtracted = allEvents.filter((e) => e.stats && e.stats.categories && (e.stats.categories.recentMatches || e.stats.categories.headToHead)).length;
-    state.counts.withStats = allEvents.filter((e) => e.stats && e.stats.available).length;
-    state.counts.withMarkets = allEvents.filter((e) => e.markets && e.markets.length).length;
-    state.counts.evaluated = allEvents.filter((e) => e.evaluated).length;
-    state.counts.candidates = cands.length;
-    state.counts.rejected = allEvents.filter((e) => !!e.rejected).length;
-    state.counts.rejectionReasons = why;
+    const why = tallyRejections(allEvents, cands, state);
 
     await stage('Constructing ticket');
     const t = tk.build(cands, req);
@@ -508,4 +531,4 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { parseLocalYmd, computeWindow, validateRequest, VALID_SPORTS, VALID_SCOPES };
+module.exports = { parseLocalYmd, computeWindow, validateRequest, isVirtualFixture, tallyRejections, VALID_SPORTS, VALID_SCOPES };

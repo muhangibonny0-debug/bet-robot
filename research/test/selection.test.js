@@ -364,15 +364,29 @@ test('Gismo classifier, strict home/away UID association (arrival-order independ
   obs.records.push(miRec);
   obs._storeInCache(miRec);
 
-  const st = obs.assemble(ev);
-  assert.equal(st.available, true);
-  assert.equal(st.status, 'complete');
-  assert.equal(st.homeTeam.uid, 2959);
-  assert.equal(st.awayTeam.uid, 3002);
-  assert.equal(st.goals.hFor, 2.4);
-  assert.equal(st.goals.aFor, 1.2);
-  assert.deepEqual(st.h2h, { n: 1, H: 1, X: 0, A: 0 });
-  assert.equal(st.competition, 'UEFA Europa League');
+  const stPartial = obs.assemble(ev);
+  assert.equal(stPartial.available, true);
+  assert.equal(stPartial.status, 'partial'); // recentMatches missing -> must NEVER be labelled complete
+  assert.equal(stPartial.homeTeam.uid, 2959);
+  assert.equal(stPartial.awayTeam.uid, 3002);
+  assert.equal(stPartial.goals.hFor, 2.4);
+  assert.equal(stPartial.goals.aFor, 1.2);
+  assert.deepEqual(stPartial.h2h, { n: 1, H: 1, X: 0, A: 0 });
+  assert.equal(stPartial.competition, 'UEFA Europa League');
+
+  // Adding recentMatches for both teams upgrades status to complete
+  obs._storeInCache({
+    category: 'team_recent_matches', args: ['2959'],
+    data: { team: { _id: 2959 }, matches: [{ _id: 11, teams: { home: { uid: 2959, name: 'Feyenoord' }, away: { uid: 99, name: 'Opp' } }, result: { home: 2, away: 1 } }] },
+  });
+  obs._storeInCache({
+    category: 'team_recent_matches', args: ['3002'],
+    data: { team: { _id: 3002 }, matches: [{ _id: 12, teams: { home: { uid: 3002, name: 'FC Porto' }, away: { uid: 88, name: 'Opp2' } }, result: { home: 1, away: 0 } }] },
+  });
+  const stComplete = obs.assemble(ev);
+  assert.equal(stComplete.status, 'complete');
+  assert.equal(stComplete.homeForm, 'W');
+  assert.equal(stComplete.awayForm, 'W');
 
   // Mismatched fixture team names must be rejected as association_failed
   const wrongEv = { home: 'Arsenal', away: 'Chelsea', url: 'https://www.bangbet.com/ug-m/sport/Football/match?matchId=sr%3Amatch%3A99001122' };
@@ -392,4 +406,44 @@ test('GismoCache tracks hits, misses, and TTL expiry accurately', async () => {
   await new Promise((r) => setTimeout(r, 70));
   assert.equal(cache.get('k1'), null);
   assert.equal(cache.evictions, 1);
+});
+
+test('isVirtualFixture excludes SRL and virtual leagues without excluding genuine football', () => {
+  const { isVirtualFixture } = require('../run');
+  assert.equal(isVirtualFixture({ country: 'Simulated Reality League', league: 'Serie A SRL', home: 'AC Monza Srl', away: 'Fiorentina SRL' }), true);
+  assert.equal(isVirtualFixture({ country: 'Simulated Reality League', league: 'Premier League SRL', home: 'Brentford FC', away: 'Everton FC SRL' }), true);
+  assert.equal(isVirtualFixture({ country: 'Virtual', league: 'eFootball', home: 'Team A', away: 'Team B' }), true);
+  assert.equal(isVirtualFixture({ country: 'Italy', league: 'Serie A', home: 'AC Monza', away: 'ACF Fiorentina' }), false);
+  assert.equal(isVirtualFixture({ country: 'England', league: 'Premier League', home: 'Brentford FC', away: 'Everton FC' }), false);
+  assert.equal(isVirtualFixture({ country: 'Ukraine', league: 'Premier League', home: 'FC Chernomorets Odessa', away: 'FC Epitsentr' }), false);
+});
+
+test('tallyRejections preserves rejection counts and reasons before early-return paths', () => {
+  const { tallyRejections } = require('../run');
+  const events = [
+    { opened: true, markets: [{ odds: 1.5 }], stats: { available: false, responseCount: 0 }, rejected: 'markets extracted, but BangBet Stats tab did not provide readable statistics' },
+    { opened: true, markets: [{ odds: 1.8 }], stats: { available: true, responseCount: 9, categories: { teamIdentity: true, recentMatches: true } }, evaluated: true },
+    { opened: false, rejected: 'error: match page navigation timed out after 25s' },
+  ];
+  const state = { counts: {} };
+  const why = tallyRejections(events, [{ evKey: '1', odds: 1.8 }], state);
+  assert.equal(state.counts.opened, 2);
+  assert.equal(state.counts.withMarkets, 2);
+  assert.equal(state.counts.withStats, 1);
+  assert.equal(state.counts.evaluated, 1);
+  assert.equal(state.counts.rejected, 2);
+  assert.equal(why['markets extracted, but BangBet Stats tab did not provide readable statistics'], 1);
+  assert.equal(why['error: match page navigation timed out after 25s'], 1);
+});
+
+test('Over/Under Total markets classify cleanly with decimal lines', () => {
+  const ev = { home: 'AC Monza', away: 'ACF Fiorentina' };
+  const o15 = classify('Total', 'over 1.5', ev);
+  assert.equal(o15.type, 'OU');
+  assert.equal(o15.side, 'O');
+  assert.equal(o15.line, 1.5);
+  const u25 = classify('Over/Under', 'under 2.5', ev);
+  assert.equal(u25.type, 'OU');
+  assert.equal(u25.side, 'U');
+  assert.equal(u25.line, 2.5);
 });

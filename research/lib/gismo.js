@@ -570,19 +570,17 @@ class GismoPageObserver {
       }
     }
 
-    // Determine explicit status: complete vs partial vs unavailable
-    const hasCore = out.categories.teamIdentity && (out.categories.teamSeasonScoring || out.categories.recentMatches);
-    const richCount = [
-      out.categories.teamSeasonScoring,
-      out.categories.recentMatches,
-      out.categories.headToHead,
-      out.categories.standings,
-    ].filter(Boolean).length;
+    // Determine explicit status: NEVER label partial data as complete.
+    // "complete" requires teamIdentity + teamSeasonScoring + recentMatches + (headToHead or standings).
+    const hasIdentity = out.categories.teamIdentity;
+    const hasSeason = out.categories.teamSeasonScoring;
+    const hasRecent = out.categories.recentMatches;
+    const hasContext = out.categories.headToHead || out.categories.standings;
 
-    if (hasCore && richCount >= 2) {
+    if (hasIdentity && hasSeason && hasRecent && hasContext) {
       out.available = true;
       out.status = 'complete';
-    } else if (hasCore || out.categories.headToHead || out.categories.standings) {
+    } else if (hasIdentity && (hasSeason || hasRecent || hasContext)) {
       out.available = true;
       out.status = 'partial';
     } else {

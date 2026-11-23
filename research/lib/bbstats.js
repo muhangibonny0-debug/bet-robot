@@ -281,8 +281,9 @@ function parse(text, ev) {
   return st;
 }
 
-async function stats(page, ev, legacy) {
+async function stats(page, ev, legacy, opts = {}) {
   const t0 = Date.now();
+  const viaPhoneGateway = !!(opts && opts.viaPhoneGateway);
   // 1) Fast path: check if Gismo JSON responses (or cache) already satisfy this fixture
   let gismoSt = page.gismo ? page.gismo.assemble(ev) : null;
   let clicked = false;
@@ -297,10 +298,13 @@ async function stats(page, ev, legacy) {
       if (!clicked) await sleep(500);
     }
 
-    // 3) Wait strictly for underlying Gismo JSON responses (exiting immediately once complete)
+    // 3) Bounded wait for underlying Gismo JSON responses:
+    //    Partial data does NOT stop waiting early; exits immediately once status === 'complete'.
     if (page.gismo) {
-      for (let i = 0; i < 14; i++) {
-        await sleep(350);
+      const maxPolls = viaPhoneGateway ? 20 : 14; // ~8s over PhoneGateway, ~5s direct
+      const pollMs = viaPhoneGateway ? 400 : 350;
+      for (let i = 0; i < maxPolls; i++) {
+        await sleep(pollMs);
         gismoSt = page.gismo.assemble(ev);
         if (gismoSt.status === 'complete') break;
         if (i === 5 && gismoSt.responseCount === 0 && !clicked) {

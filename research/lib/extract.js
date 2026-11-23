@@ -195,7 +195,8 @@ const MKT_JS = () => {
     if (b.width < 24 || b.height < 18) continue;
     cells.push({ el, label: m[1].trim(), odds: parseFloat(m[2]), t, x: b.left + b.width / 2, y: b.top + b.height / 2 });
   }
-  const keep = cells.filter((c) => !cells.some((o) => o !== c && o.el.contains(c.el) && o.t === c.t));
+  // Drop any ancestor container that wraps another matched price cell (prevents parent-container duplicates)
+  const keep = cells.filter((c) => !cells.some((o) => o !== c && c.el.contains(o.el)));
   const out = [];
   keep.forEach((c, i) => {
     c.el.setAttribute('data-bb', String(i));
@@ -203,7 +204,7 @@ const MKT_JS = () => {
     let title = '';
     let gi = -1;
     let label = c.label;
-    for (let up = 0; g && up < 7; up++, g = g.parentElement) {
+    for (let up = 0; g && up < 10; up++, g = g.parentElement) {
       const inside = keep.filter((o) => g.contains(o.el));
       if (inside.length >= 2 && inside.length <= 60) {
         const texts = new Set(inside.flatMap((o) => [o.t, o.label, String(o.odds), o.odds.toFixed(2)]));
@@ -215,14 +216,18 @@ const MKT_JS = () => {
           title = head;
           gi = inside.indexOf(c);
           // For table-layout markets (e.g. Total / Liverpool FC total / Asian Handicap) where price cells have no inline label,
-          // resolve column header ("over"/"under"/"home"/"draw"/"away") + row line ("0.5"/"1.5"/"-0.5") by geometry.
+          // resolve column header ("over"/"under"/"home"/"draw"/"away") + row line ("0.5"/"1.5"/"2.5"/"-0.5") by geometry.
           if (!label) {
-            const sameRow = inside.filter((o) => Math.abs(o.y - c.y) < 16).sort((a, b) => a.x - b.x);
+            const sameRow = inside.filter((o) => Math.abs(o.y - c.y) < 18).sort((a, b) => a.x - b.x);
             const colIdx = sameRow.indexOf(c);
             const colHeads = gLines.filter((s) => /^(over|under|home|draw|away)$/i.test(s));
-            const rowParent = c.el.parentElement;
-            const rowTokens = rowParent ? (rowParent.innerText || '').split('\n').map((s) => s.trim()).filter(Boolean) : [];
-            const rowLine = rowTokens.find((s) => lineRe.test(s) && !/^\d{1,3}\.\d{2}$/.test(s)) || '';
+            // Check up to 4 ancestor levels for the row's line label (e.g. "0.5", "1.5", "2.5")
+            let rowLine = '';
+            let rp = c.el.parentElement;
+            for (let rUp = 0; rp && rUp < 5 && !rowLine; rUp++, rp = rp.parentElement) {
+              const rowTokens = (rp.innerText || '').split('\n').map((s) => s.trim()).filter(Boolean);
+              rowLine = rowTokens.find((s) => lineRe.test(s) && !/^\d{1,3}\.\d{2}$/.test(s)) || '';
+            }
             if (colHeads.length === sameRow.length && colIdx >= 0) {
               const colName = colHeads[colIdx];
               label = rowLine ? `${colName} ${rowLine}` : colName;
@@ -385,6 +390,6 @@ async function markets(page, ev) {
 }
 
 module.exports = {
-  stats: (page, ev) => require('./bbstats').stats(page, ev, parseStatsText),
+  stats: (page, ev, opts) => require('./bbstats').stats(page, ev, parseStatsText, opts),
   markets, openMarkets, classify, parseStatsText,
 };
