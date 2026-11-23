@@ -31,11 +31,15 @@ const messaging = getMessaging();
 
 (async () => {
   for (const n of list) {
-    await messaging.send({
+    const payload = {
       topic: 'bet-assist',
       notification: { title: n.title, body: n.body },
       android: { priority: 'high' },
-    });
+    };
+    if (n.data && typeof n.data === 'object') {
+      payload.data = Object.fromEntries(Object.entries(n.data).map(([k, v]) => [String(k), String(v)]));
+    }
+    await messaging.send(payload);
     console.log('Sent:', n.title);
   }
 })().catch((e) => {

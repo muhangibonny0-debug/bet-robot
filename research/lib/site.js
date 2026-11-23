@@ -183,19 +183,40 @@ function parseWhen(dateText, timeText) {
 }
 
 class Site {
-  constructor() { this.browser = null; this.ctx = null; this.notes = []; this.apis = new Set(); this.discovery = {}; }
+  constructor() {
+    this.browser = null; this.ctx = null; this.notes = [];
+    this.apis = new Set(); this.discovery = {};
+    this.blockedRequests = 0;
+  }
 
-  async start() {
+  async start(opts = {}) {
     if (!chromium) throw new Error('Playwright browser runtime is not installed.');
     const opt = { headless: true, args: ['--no-sandbox', '--disable-dev-shm-usage'] };
     if (process.env.CHROME_PATH) opt.executablePath = process.env.CHROME_PATH;
-    if (process.env.BOT_PROXY) opt.proxy = { server: process.env.BOT_PROXY };
+    const proxyServer = opts.proxyServer || process.env.BOT_PROXY || '';
+    if (proxyServer) opt.proxy = { server: proxyServer };
     this.browser = await chromium.launch(opt);
     this.ctx = await this.browser.newContext({
       viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true,
       userAgent: 'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
       locale: 'en-UG', timezoneId: 'Africa/Kampala', permissions: ['clipboard-read', 'clipboard-write'],
     });
+    // Mobile data optimization: block unnecessary heavy media/images/fonts/trackers/ads
+    // while ALWAYS allowing required scripts, APIs, HTML, and Sportradar/BangBet statistics widgets.
+    if (opts.optimizeData !== false) {
+      const blockedDomains = /(adjust\.com|zendesk\.com|zdassets\.com|googletagmanager\.com|google-analytics\.com|doubleclick\.net|facebook\.net|connect\.facebook|hotjar\.com|tiktok\.com|sentry\.io|firebaseinstallations\.googleapis\.com|googlesyndication\.com)/i;
+      const blockedTypes = new Set(['image', 'media', 'font']);
+      await this.ctx.route('**/*', (route) => {
+        const req = route.request();
+        const rtype = req.resourceType();
+        const url = req.url();
+        if (blockedTypes.has(rtype) || blockedDomains.test(url)) {
+          this.blockedRequests++;
+          return route.abort().catch(() => {});
+        }
+        return route.continue().catch(() => {});
+      });
+    }
   }
 
   async close() { if (this.browser) await this.browser.close().catch(() => {}); }

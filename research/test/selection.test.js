@@ -304,3 +304,26 @@ test('target-driven ticket building stops early on low odds targets and scales p
   assert.equal(high.complete, true);
   assert.ok(high.total >= 500 && high.legs.length > 20);
 });
+
+test('PhoneGatewayServer counts exact upload/download bytes, warns at 80%, and stops forwarding at limit', async () => {
+  const { PhoneGatewayServer } = require('../lib/gateway');
+  const gw = new PhoneGatewayServer({ limitMb: 1 }); // 1 MB = 1,048,576 bytes
+  const info = await gw.start({ useCloudflared: false });
+  try {
+    assert.ok(info.proxyUrl.startsWith('http://127.0.0.1:'));
+    assert.ok(info.gatewayUrl.startsWith('ws://127.0.0.1:'));
+    assert.equal(info.gatewayToken.length, 48);
+
+    gw._account(500 * 1024, 'up');
+    gw._account(350 * 1024, 'down');
+    assert.equal(gw.warned80, true);
+    assert.equal(gw.limitReached, false);
+    assert.equal(gw.totalBytes, 850 * 1024);
+
+    gw._account(200 * 1024, 'down');
+    assert.equal(gw.limitReached, true);
+    assert.equal(gw.status().limitReached, true);
+  } finally {
+    await gw.close();
+  }
+});

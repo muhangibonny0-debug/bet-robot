@@ -14,7 +14,7 @@ async function addLeg(site, page, leg, scope = 'today', req = null) {
   const r = m.odds / leg.odds;
   if (r < 0.7 || r > 1.4) return { ok: false, why: `the odds changed a lot: ${leg.odds} to ${m.odds}` };
   if (m.i < 0) return { ok: false, why: 'the price was found in data, not on the page, so it cannot be clicked' };
-  await page.locator(`[data-bb="${m.i}"]`).first().click({ timeout: 4000 }).catch(() => { m.i = -1; });
+  await page.locator(`[data-bb="${m.i}"]`).first().click({ timeout: 4000, force: true }).catch(() => { m.i = -1; });
   if (m.i < 0) return { ok: false, why: 'the price could not be clicked' };
   await sleep(900);
   return { ok: true, odds: m.odds, changed: Math.abs(m.odds - leg.odds) > 0.005 };
@@ -29,14 +29,27 @@ function verifySlipText(text, legs) {
   return { ok: missing.length === 0, missing };
 }
 
+const BAD_CODES = new Set([
+  'ACCEPT', 'REMOVE', 'MULTIPLE', 'SINGLES', 'SHARE', 'PLACE', 'BETSLIP', 'TOTAL',
+  'STAKE', 'BOOST', 'LOGIN', 'CANCEL', 'CLOSE', 'COPY', 'LINK', 'CODE', 'LOAD', 'NONE',
+]);
+function isPlausibleCode(v, fromJson = false) {
+  const s = String(v || '').trim().toUpperCase();
+  if (!/^[A-Z0-9]{4,12}$/.test(s)) return false;
+  if (BAD_CODES.has(s)) return false;
+  // DOM regex matches must contain at least one digit so UI words are never mistaken for booking codes
+  if (!fromJson && !/\d/.test(s)) return false;
+  return true;
+}
+
 async function share(site, page, legs) {
   const out = { code: '', link: '', why: '' };
   let opened = false;
-  for (const sel of ['[class*="slip" i]:visible', '[class*="cart" i]:visible']) {
+  for (const sel of ['[class*="betslip" i]:visible', '[class*="slip" i]:visible', '[class*="cart" i]:visible']) {
     try {
       const el = page.locator(sel).first();
       if ((await el.count()) && (await el.isVisible())) {
-        await el.click({ timeout: 2000 });
+        await el.click({ timeout: 3000, force: true });
         await sleep(1200);
         opened = true;
         break;
@@ -45,9 +58,9 @@ async function share(site, page, legs) {
   }
   if (!opened) {
     try {
-      const el = page.getByText(/bet\\s*slip/i).first();
+      const el = page.getByText(/bet\s*slip/i).first();
       if ((await el.count()) && (await el.isVisible())) {
-        await el.click({ timeout: 2000 });
+        await el.click({ timeout: 3000, force: true });
         await sleep(1200);
         opened = true;
       }
@@ -61,29 +74,63 @@ async function share(site, page, legs) {
     return { ...out, why: 'Betslip verification failed; these selections were not visible in the slip: ' + names };
   }
   await site.shot(page, 'book_slip_verified');
-  const mark = page.net.length;
-  for (const re of [/book(ing)?\s*(a\s*)?bet/i, /booking\s*code/i, /generate\s*code/i, /share/i, /\bbook\b/i]) {
+  // Ensure the combined "Multiple" tab is active when booking >= 2 selections
+  if (legs.length >= 2) {
     try {
-      const el = page.getByText(re).first();
-      if ((await el.count()) && (await el.isVisible())) { await el.click({ timeout: 3000 }); await sleep(2500); break; }
+      const mult = page.getByText(/^multiple$/i).first();
+      if ((await mult.count()) && (await mult.isVisible())) {
+        await mult.click({ timeout: 2500, force: true }).catch(() => {});
+        await sleep(500);
+      }
+    } catch (_) {}
+  }
+  const mark = page.net.length;
+  for (const re of [/^share\s*bet$/i, /share\s*(bet|slip|code)/i, /book(ing)?\s*(a\s*)?bet/i, /booking\s*code/i, /generate\s*code/i]) {
+    try {
+      const el = page.getByText(re).last();
+      if ((await el.count()) && (await el.isVisible())) {
+        const box = await el.boundingBox().catch(() => null);
+        if (box) {
+          await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+        } else {
+          await el.click({ timeout: 4000, force: true });
+        }
+        await sleep(3500);
+        break;
+      }
     } catch (e) { /* ignore */ }
   }
+  // If BangBet shows a "Copy Link" button inside the Share Bet modal, click it to populate clipboard as well
+  try {
+    const cp = page.getByText(/^copy\s*link$/i).first();
+    if ((await cp.count()) && (await cp.isVisible())) {
+      await cp.click({ timeout: 2000, force: true }).catch(() => {});
+      await sleep(500);
+    }
+  } catch (_) {}
   const text = await page.evaluate(() => document.body.innerText).catch(() => '');
   const vals = await page.evaluate(() => Array.from(document.querySelectorAll('input,textarea')).map((i) => i.value).filter(Boolean)).catch(() => []);
-  const hay = [text, ...vals].join('\n');
+  const clip = await page.evaluate(() => navigator.clipboard ? navigator.clipboard.readText().catch(() => '') : '').catch(() => '');
+  const hay = [text, ...vals, clip].join('\n');
   const u = hay.match(/https?:\/\/[^\s"'<>]*bangbet[^\s"'<>]*/i);
   if (u) out.link = u[0];
-  const c = hay.match(/(?:booking|bet|share)\s*code\s*[:-]?\s*([A-Z0-9]{4,10})\b/i);
-  if (c) out.code = c[1];
   for (const r of page.net.slice(mark)) {
     walk(r.body, (o) => {
       for (const k of Object.keys(o)) {
         const v = o[k];
         if (typeof v !== 'string') continue;
-        if (/^(booking|bet|share)_?code$/i.test(k) && /^[A-Za-z0-9]{4,10}$/.test(v) && !out.code) out.code = v.toUpperCase();
-        if (/(link|url)/i.test(k) && /bangbet/i.test(v) && !out.link) out.link = v;
+        if (/^(booking|bet|share)_?code$|^shareCode$|^bookCode$/i.test(k) && isPlausibleCode(v, true) && !out.code) out.code = v.toUpperCase();
+        if (/(link|url|shareUrl)/i.test(k) && /bangbet/i.test(v) && !out.link) out.link = v;
       }
     });
+  }
+  if (!out.code) {
+    const c = hay.match(/(?:booking|bet|share)\s*code\s*[:-]?\s*([A-Z0-9]{4,12})\b/i);
+    if (c && isPlausibleCode(c[1], false)) out.code = c[1].toUpperCase();
+  }
+  if (!out.code && out.link) {
+    const qm = out.link.match(/[?&](?:shareCode|bookingCode|code)=([A-Za-z0-9]{4,12})\b/i);
+    if (qm && isPlausibleCode(qm[1], true)) out.code = qm[1].toUpperCase();
   }
   await site.shot(page, 'book_after_share');
   return out;

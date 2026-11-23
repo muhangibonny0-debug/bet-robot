@@ -92,14 +92,15 @@ function validateRequest(P, req) {
 const TOP = /(premier|champions|europa|la liga|serie a|bundesliga|ligue 1|eredivisie|primeira|championship|nba|euroleague|atp|wta|nhl|mlb)/i;
 const prio = (e) => (TOP.test(`${e.country} ${e.league}`) ? 0 : 1);
 
-async function notify(title, body) {
+async function notify(title, body, data = null) {
   const f = path.join(__dirname, '..', 'notify', 'out.json');
   fs.mkdirSync(path.dirname(f), { recursive: true });
-  fs.writeFileSync(f, JSON.stringify([{ title, body }]));
+  fs.writeFileSync(f, JSON.stringify([{ title, body, ...(data ? { data } : {}) }]));
 }
 
 async function main() {
   const { Site, OUT } = require('./lib/site');
+  const { PhoneGatewayServer } = require('./lib/gateway');
   const job = JSON.parse(process.env.JOB || '{}');
   const ID = process.env.JOB_ID || job.id || 'manual';
   const P = job.params || job;
@@ -114,6 +115,8 @@ async function main() {
     count: Number(P.count) || 0,
     minutes: Math.min(105, Math.max(5, Number(P.minutes) || 105)),
     noBook: !!P.noBook,
+    usePhoneGateway: P.usePhoneGateway === true || process.env.USE_PHONE_GATEWAY === '1',
+    dataLimitMb: Number(P.dataLimitMb) > 0 ? Math.min(2000, Math.max(1, Number(P.dataLimitMb))) : 200,
     text: job.text || '',
   };
   const started = Date.now();
@@ -130,11 +133,17 @@ async function main() {
       combinedOdds: 0, targetOdds: req.target,
       exhaustedAllFixtures: false, timedOut: false,
     },
+    gateway: null,
     ticket: null, booking: null, error: '', notes: [],
   };
+  let gw = null;
   let lastSave = 0;
   async function save(force) {
     state.updated = Date.now();
+    if (gw) {
+      const s = gw.status();
+      state.gateway = { ...(state.gateway || {}), ...s };
+    }
     if (!force && state.updated - lastSave < 4000) return;
     lastSave = state.updated;
     await gist.save(ID, state).catch((e) => log('gist', e.message));
@@ -161,7 +170,34 @@ async function main() {
     await stage('Understanding request');
     validateRequest(P, req);
     log('request:', JSON.stringify(req));
-    await site.start();
+
+    let proxyServer = '';
+    if (req.usePhoneGateway) {
+      await stage('Starting phone gateway tunnel');
+      gw = new PhoneGatewayServer({ limitMb: req.dataLimitMb });
+      const info = await gw.start({ useCloudflared: process.env.GATEWAY_LOCAL_ONLY !== '1' });
+      proxyServer = info.proxyUrl;
+      state.gateway = {
+        ...gw.status(),
+        gatewayUrl: info.gatewayUrl,
+        gatewayToken: info.gatewayToken,
+      };
+      await stage('Waiting for phone gateway connection');
+      const connected = await gw.waitForPhone(120000);
+      if (!connected) {
+        state.status = 'gateway_disconnected';
+        state.error = 'Phone gateway did not connect within 120 seconds. Research stopped without falling back to direct cloud browsing.';
+        await notify(
+          'BETBRAIN | EXECUTION ALERT',
+          'Research could not complete.\nThe research engine encountered a connection or data extraction problem. Review the execution report.',
+          { route: 'chat', jobId: ID }
+        );
+        return;
+      }
+      log('Phone gateway connected via zero-cost tunnel.');
+    }
+
+    await site.start({ proxyServer, optimizeData: true });
 
     // Target-driven interleaved discovery & inspection:
     // Loads fixtures in progressive batches (no artificial 30-match or 500-match cap),
@@ -267,6 +303,9 @@ async function main() {
             let cursor = 0;
             const runWorker = async (wIdx) => {
               while (!targetMet && Date.now() < deadline) {
+                if (gw && (gw.limitReached || (!gw.connected && gw.disconnectedAt && Date.now() - gw.disconnectedAt > 45000))) {
+                  break;
+                }
                 const idx = cursor++;
                 if (idx >= windowBatch.length) break;
                 await inspectOne(wIdx, windowBatch[idx]);
@@ -305,6 +344,29 @@ async function main() {
       await Promise.all(workerPages.map((p) => p.close().catch(() => {})));
     }
 
+    if (gw && gw.limitReached) {
+      state.status = 'data_limit_reached';
+      state.error = `Stopped forwarding research traffic at the configured mobile data limit (${gw.usedMb} / ${gw.limitMb} MB). Research did not complete.`;
+      await stage('Stopped — mobile data limit reached');
+      await notify(
+        'BETBRAIN | EXECUTION ALERT',
+        'Research could not complete.\nThe research engine encountered a connection or data extraction problem. Review the execution report.',
+        { route: 'chat', jobId: ID }
+      );
+      return;
+    }
+    if (gw && !gw.connected && !targetMet) {
+      state.status = 'gateway_disconnected';
+      state.error = `Phone gateway disconnected after transferring ${gw.usedMb} MB and did not reconnect. Research stopped without falling back to direct cloud browsing.`;
+      await stage('Stopped — phone gateway disconnected');
+      await notify(
+        'BETBRAIN | EXECUTION ALERT',
+        'Research could not complete.\nThe research engine encountered a connection or data extraction problem. Review the execution report.',
+        { route: 'chat', jobId: ID }
+      );
+      return;
+    }
+
     if (!allEvents.length) {
       throw new Error('BangBet displayed no fixtures for the selected Time period. ' + site.notes.join(' | '));
     }
@@ -340,8 +402,11 @@ async function main() {
       state.booking = { ok: false, why: 'no qualifying selections to book' };
       await stage('Completed — no qualifying selections found');
       state.stages[state.stages.length - 1].ok = true;
-      await notify('BETBRAIN — NO QUALIFYING TICKET',
-        `Inspected ${state.counts.opened} of ${state.counts.inWindow} matches; no selection met the evidence rules.\n${reasonsText}`);
+      await notify(
+        'BETBRAIN | RESEARCH STATUS',
+        'Research execution completed.\nNo qualifying ticket was produced because the available selections did not satisfy the evidence requirements.',
+        { route: 'chat', jobId: ID }
+      );
       return;
     }
 
@@ -365,14 +430,21 @@ async function main() {
         ? 'Partial result — execution time limit reached'
         : 'Partial result — qualifying fixtures exhausted before target');
       state.stages[state.stages.length - 1].ok = true;
-      await notify('BETBRAIN — RESEARCH INCOMPLETE',
-        `Research stopped without reaching the requested ticket requirements.\nSelections: ${state.ticket.legs.length}\nTarget odds: ${req.target || 'not set'}\nTotal odds: ${state.ticket.total}\n${state.ticket.note}`);
+      await notify(
+        'BETBRAIN | RESEARCH STATUS',
+        'Research execution completed.\nNo qualifying ticket was produced because the available selections did not satisfy the evidence requirements.',
+        { route: 'chat', jobId: ID }
+      );
     } else if (req.noBook) {
       state.status = 'booking_failed';
       state.booking = { ok: false, why: 'betslip preparation was switched off for this job' };
       await stage('Research complete — betslip preparation disabled');
       state.stages[state.stages.length - 1].ok = true;
-      await notify('BETBRAIN — BETSLIP NOT PREPARED', 'Research completed, but betslip preparation was disabled. No booking code exists.');
+      await notify(
+        'BETBRAIN | RESEARCH STATUS',
+        'Research execution completed.\nSelections were researched, but betslip booking was disabled for this job.',
+        { route: 'chat', jobId: ID }
+      );
     } else {
       await stage('Preparing BangBet betslip');
       state.booking = await bk.book(site, t.legs.map((c, i) => ({ ...state.ticket.legs[i] })), deadline, req.scope, req);
@@ -381,33 +453,49 @@ async function main() {
         state.status = 'done';
         await stage('Booking code confirmed');
         state.stages[state.stages.length - 1].ok = true;
-        const names = req.sports.map((s) => s[0].toUpperCase() + s.slice(1)).join(' + ');
-        await notify('BETBRAIN — BOOKING CODE CONFIRMED',
-          `${names} research completed.\nSelections: ${state.ticket.legs.length}\nCombined odds: ${state.ticket.total}\nBangBet booking code: ${state.booking.code}`);
+        await notify(
+          'BETBRAIN | RESEARCH PROTOCOL',
+          'Research execution completed.\nThe analysis pipeline has completed successfully. A qualifying ticket has been generated and saved. Combined odds and booking reference are ready for retrieval.',
+          { route: 'home', jobId: ID, code: state.booking.code }
+        );
       } else {
         state.status = 'booking_failed';
         await stage('Selections researched — booking code not confirmed');
         state.stages[state.stages.length - 2].ok = false;
         state.stages[state.stages.length - 1].ok = false;
-        await notify('BETBRAIN — BOOKING NOT CONFIRMED',
-          `Research found ${state.ticket.legs.length} selections at ${state.ticket.total} combined odds, but BangBet did not confirm a booking code. ${state.booking.why || ''}`);
+        await notify(
+          'BETBRAIN | EXECUTION ALERT',
+          'Research could not complete.\nThe research engine encountered a connection or data extraction problem. Review the execution report.',
+          { route: 'chat', jobId: ID }
+        );
       }
     }
   } catch (e) {
     state.status = 'failed';
     state.error = e.message;
     log('FAILED', e.message);
-    await notify('BETBRAIN — RESEARCH NOT COMPLETED', String(e.message).slice(0, 220));
+    await notify(
+      'BETBRAIN | EXECUTION ALERT',
+      'Research could not complete.\nThe research engine encountered a connection or data extraction problem. Review the execution report.',
+      { route: 'chat', jobId: ID }
+    );
   } finally {
     state.notes = site.notes;
+    if (gw) {
+      const s = gw.status();
+      // Remove ephemeral tunnel secret from final persisted state
+      state.gateway = s;
+    }
     const recon = {
-      counts: state.counts, discovery: site.discovery, notes: site.notes, apis: [...site.apis].slice(0, 40),
+      counts: state.counts, discovery: site.discovery, gateway: state.gateway,
+      blockedRequests: site.blockedRequests, notes: site.notes, apis: [...site.apis].slice(0, 40),
     };
     fs.writeFileSync(path.join(OUT, 'recon.json'), JSON.stringify(recon, null, 1));
     log('SUMMARY', JSON.stringify(recon).slice(0, 2500));
     await save(true);
     await gist.prune(20).catch(() => {});
     await site.close();
+    if (gw) await gw.close().catch(() => {});
   }
 }
 

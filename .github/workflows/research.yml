@@ -27,11 +27,14 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install the browser
+      - name: Install the browser and zero-cost tunnel client
         run: |
           cd research
           npm install --no-audit --no-fund
           npx playwright install --with-deps chromium
+          curl -fsSL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o /usr/local/bin/cloudflared
+          chmod +x /usr/local/bin/cloudflared
+          cloudflared --version
 
       - name: Research
         env:
