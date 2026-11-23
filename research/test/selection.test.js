@@ -447,3 +447,70 @@ test('Over/Under Total markets classify cleanly with decimal lines', () => {
   assert.equal(u25.side, 'U');
   assert.equal(u25.line, 2.5);
 });
+
+
+const { GismoPageObserver, GismoCache } = require('../lib/gismo');
+
+function fakeGismoPage() {
+  const handlers = {};
+  return {
+    on(name, fn) { handlers[name] = fn; },
+    off(name) { delete handlers[name]; },
+    emit(name, value) { if (handlers[name]) handlers[name](value); },
+  };
+}
+
+function fakeMatchInfoResponse(matchId, delayMs = 0) {
+  const payload = {
+    doc: [{
+      event: 'match_info',
+      data: {
+        match: {
+          _id: matchId,
+          _seasonid: 99,
+          teams: {
+            home: { uid: 10, name: 'Home United' },
+            away: { uid: 20, name: 'Away United' },
+          },
+        },
+        tournament: { name: 'Test League' },
+      },
+    }],
+  };
+  return {
+    url: () => `https://example.test/gismo/match_info/${matchId}`,
+    status: () => 200,
+    headers: () => ({ 'content-type': 'application/json' }),
+    text: async () => {
+      if (delayMs) await new Promise((resolve) => setTimeout(resolve, delayMs));
+      return JSON.stringify(payload);
+    },
+  };
+}
+
+test('Gismo observer drains asynchronous response body parsing before assembly', async () => {
+  const page = fakeGismoPage();
+  const observer = new GismoPageObserver(page, new GismoCache());
+  observer.beginFixture({ matchId: 123 });
+  page.emit('response', fakeMatchInfoResponse(123, 30));
+
+  assert.equal(observer.pendingResponses.size, 1);
+  await observer.waitForQuiet(20, 500);
+  assert.equal(observer.pendingResponses.size, 0);
+  assert.equal(observer.records.length, 1);
+  assert.equal(observer.assemble({ matchId: 123 }).homeTeam.uid, 10);
+  observer.detach();
+});
+
+test('late Gismo response from previous fixture cannot contaminate the next fixture', async () => {
+  const page = fakeGismoPage();
+  const observer = new GismoPageObserver(page, new GismoCache());
+  observer.beginFixture({ matchId: 123 });
+  page.emit('response', fakeMatchInfoResponse(123, 30));
+  observer.beginFixture({ matchId: 456 });
+
+  await observer.waitForQuiet(20, 500);
+  assert.equal(observer.records.length, 0);
+  assert.equal(observer.assemble({ matchId: 456 }).status, 'unavailable');
+  observer.detach();
+});
