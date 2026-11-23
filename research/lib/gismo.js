@@ -307,12 +307,12 @@ class GismoPageObserver {
     this.pendingResponses = new Set();
     this.lastGismoResponseAt = 0;
     this._handler = (res) => {
-      if (!/\\/gismo\\//i.test(res.url())) return;
+      if (!/\/gismo\//i.test(res.url())) return;
       this.lastGismoResponseAt = Date.now();
       const token = this.captureToken;
       const task = this._onResponse(res, token);
       this.pendingResponses.add(task);
-      task.finally(() => this.pendingResponses.delete(task));
+      task.then(() => this.pendingResponses.delete(task), () => this.pendingResponses.delete(task));
     };
     page.on('response', this._handler);
   }
