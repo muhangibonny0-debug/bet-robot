@@ -288,8 +288,8 @@ async function stats(page, ev, legacy, opts = {}) {
   let gismoSt = page.gismo ? page.gismo.assemble(ev) : null;
   let clicked = false;
 
+  // 2) Trigger Stats only when the Gismo capture has not already met its minimum evidence.
   if (!gismoSt || gismoSt.status !== 'complete') {
-    // 2) One controlled Stats-tab interaction to trigger BangBet's Gismo statistics requests
     for (let i = 0; i < 2 && !clicked; i++) {
       const marked = await page.evaluate(MARK).catch(() => false);
       if (marked) {
@@ -297,23 +297,41 @@ async function stats(page, ev, legacy, opts = {}) {
       }
       if (!clicked) await sleep(500);
     }
+  }
 
-    // 3) Bounded wait for underlying Gismo JSON responses:
-    //    Partial data does NOT stop waiting early; exits immediately once status === 'complete'.
-    if (page.gismo) {
-      const maxPolls = viaPhoneGateway ? 20 : 14; // ~8s over PhoneGateway, ~5s direct
-      const pollMs = viaPhoneGateway ? 400 : 350;
-      for (let i = 0; i < maxPolls; i++) {
-        await sleep(pollMs);
-        gismoSt = page.gismo.assemble(ev);
-        if (gismoSt.status === 'complete') break;
-        if (i === 5 && gismoSt.responseCount === 0 && !clicked) {
-          if (await page.evaluate(MARK).catch(() => false)) {
-            clicked = await page.locator('[data-bbstats="1"]').first().click({ timeout: 3000, force: true }).then(() => true).catch(() => false);
-          }
+  // 3) Drain the full Gismo response wave. "Complete" is a minimum evidence
+  // threshold, not a signal to stop listening: later responses may contain
+  // season scoring and disciplinary data. Also wait for async response.text()
+  // and JSON parsing handlers to finish before assembling the final snapshot.
+  if (page.gismo) {
+    const minWaitMs = viaPhoneGateway ? 8000 : 5000;
+    const maxWaitMs = viaPhoneGateway ? 12000 : 9000;
+    const quietMs = 1400;
+    const pollMs = 250;
+    const waitStarted = Date.now();
+    let retryClickDone = false;
+
+    while (Date.now() - waitStarted < maxWaitMs) {
+      await sleep(pollMs);
+      gismoSt = page.gismo.assemble(ev);
+      const elapsed = Date.now() - waitStarted;
+
+      // If the tab interaction produced no Gismo traffic, retry once after the
+      // page has had time to initialize. Do not repeatedly click or reload.
+      if (elapsed >= 1500 && gismoSt.responseCount === 0 && !clicked && !retryClickDone) {
+        retryClickDone = true;
+        if (await page.evaluate(MARK).catch(() => false)) {
+          clicked = await page.locator('[data-bbstats="1"]').first().click({ timeout: 3000, force: true }).then(() => true).catch(() => false);
         }
       }
+
+      if (elapsed >= minWaitMs && gismoSt.status === 'complete' && page.gismo.isQuietFor(quietMs)) break;
     }
+
+    // Final bounded drain ensures response bodies already received by Playwright
+    // are parsed before the result's responseCount/categories are frozen.
+    await page.gismo.waitForQuiet(quietMs, 1800);
+    gismoSt = page.gismo.assemble(ev);
   }
 
   if (gismoSt && gismoSt.available) {

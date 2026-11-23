@@ -303,7 +303,17 @@ class GismoPageObserver {
     this.activeMatchId = 0;
     this.records = []; // captured for active fixture
     this.startedAt = 0;
-    this._handler = (res) => this._onResponse(res);
+    this.captureToken = 0;
+    this.pendingResponses = new Set();
+    this.lastGismoResponseAt = 0;
+    this._handler = (res) => {
+      if (!/\/gismo\//i.test(res.url())) return;
+      this.lastGismoResponseAt = Date.now();
+      const token = this.captureToken;
+      const task = this._onResponse(res, token);
+      this.pendingResponses.add(task);
+      task.then(() => this.pendingResponses.delete(task), () => this.pendingResponses.delete(task));
+    };
     page.on('response', this._handler);
   }
 
@@ -311,13 +321,29 @@ class GismoPageObserver {
     this.activeMatchId = extractMatchIdFromUrl(ev && ev.url) || Number(ev && ev.matchId) || 0;
     this.records = [];
     this.startedAt = Date.now();
+    this.captureToken++;
+    this.lastGismoResponseAt = 0;
+  }
+
+  isQuietFor(ms = 1400) {
+    return this.pendingResponses.size === 0 &&
+      (!this.lastGismoResponseAt || Date.now() - this.lastGismoResponseAt >= ms);
+  }
+
+  async waitForQuiet(quietMs = 1400, maxWaitMs = 2500) {
+    const started = Date.now();
+    while (Date.now() - started < maxWaitMs) {
+      if (this.isQuietFor(quietMs)) return true;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    return this.pendingResponses.size === 0;
   }
 
   detach() {
     try { this.page.off('response', this._handler); } catch (_) {}
   }
 
-  async _onResponse(res) {
+  async _onResponse(res, captureToken = this.captureToken) {
     const url = res.url();
     if (!/\/gismo\//i.test(url) || IGNORED_DOMAINS.test(url)) return;
     const status = res.status();
@@ -333,6 +359,8 @@ class GismoPageObserver {
     } catch (_) {
       return;
     }
+    // A slow response from the previous match must never contaminate the active fixture.
+    if (captureToken !== this.captureToken) return;
     const cls = classifyEndpoint(url, body);
     if (cls.category === 'ignored') return;
     this.cache.recordPattern(cls.pattern, cls.category, cls.valid);

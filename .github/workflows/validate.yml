@@ -3,6 +3,8 @@ name: Robot Validation
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -46,6 +48,7 @@ jobs:
           node --check research/lib/site.js
           node --check research/lib/extract.js
           node --check research/lib/bbstats.js
+          node --check research/lib/gismo.js
           node --check research/lib/util.js
           node --check research/lib/analyze.js
           node --check research/lib/ticket.js
