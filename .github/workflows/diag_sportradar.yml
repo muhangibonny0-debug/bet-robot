@@ -1,0 +1,27 @@
+name: Sportradar Gismo Diagnostic (Read-Only)
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Run Sportradar/Gismo Read-Only Diagnostic
+        run: node research/tools/diag_sportradar.js | tee diag_github_result.json
+      - name: Upload Diagnostic Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sportradar-diag-report
+          path: diag_github_result.json
+          if-no-files-found: warn
+          retention-days: 3

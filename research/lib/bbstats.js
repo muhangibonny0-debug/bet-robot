@@ -459,21 +459,6 @@ async function stats(page, ev, legacy, opts = {}) {
       if (old && old.available) st = { ...old, source: 'legacy' };
     } catch (_) {}
   }
-  if (!st.available) {
-    // 5) Free public ESPN Soccer fallback when Sportradar/Gismo and BangBet DOM stats are unavailable/blocked (e.g. HTTP 403 on cloud runners).
-    try {
-      const espnStats = require('./espn_stats');
-      const espnSt = await espnStats.fetchEspnStatsForFixture(ev);
-      if (espnSt && espnSt.available) {
-        espnSt.tab = clicked;
-        espnSt.extractMs = Date.now() - t0;
-        if (gismoSt && gismoSt.diagnostics) {
-          espnSt.diagnostics = { ...gismoSt.diagnostics, fallbackSource: 'espn-public-soccer' };
-        }
-        return espnSt;
-      }
-    } catch (_) {}
-  }
   if (!st.available && gismoSt) {
     st.status = !clicked && gismoSt.status === 'no_data_returned' ? 'request_not_triggered' : gismoSt.status;
     st.endpointsCaptured = gismoSt.endpointsCaptured;
