@@ -14,7 +14,7 @@ jobs:
     timeout-minutes: 15
     env:
       TZ: Africa/Kampala
-      PLAYWRIGHT_BROWSERS_PATH: ~/.cache/ms-playwright
+      PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/playwright-browsers
     steps:
       - uses: actions/checkout@v4
 
@@ -38,17 +38,32 @@ jobs:
         id: pw-cache
         uses: actions/cache@v4
         with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-chromium-${{ hashFiles('research/package.json') }}
+          path: ${{ runner.temp }}/playwright-browsers
+          key: ${{ runner.os }}-playwright-chromium-v2-${{ hashFiles('research/package.json') }}
 
       - name: Install Playwright Chromium
         working-directory: research
         run: |
+          mkdir -p "$PLAYWRIGHT_BROWSERS_PATH"
           if [ "${{ steps.pw-cache.outputs.cache-hit }}" != "true" ]; then
             npx playwright install --with-deps chromium
           else
             npx playwright install-deps chromium
           fi
+
+      - name: Verify Chromium executable exists
+        run: |
+          node -e "
+            const fs = require('fs');
+            const { chromium } = require('./research/node_modules/playwright');
+            const exe = chromium.executablePath();
+            console.log('PLAYWRIGHT_BROWSERS_PATH:', process.env.PLAYWRIGHT_BROWSERS_PATH);
+            console.log('Chromium executable:', exe);
+            if (!exe || !fs.existsSync(exe)) {
+              console.error('Chromium executable not found at:', exe);
+              process.exit(1);
+            }
+          "
 
       - name: Run Read-Only Live Runner + Groq Probe (No Phone Gateway, No Bets)
         env:
