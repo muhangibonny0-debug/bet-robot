@@ -938,6 +938,127 @@ class GismoPageObserver {
     this._storeInCache(rec);
   }
 
+  _ingestDirectBody(url, body, captureToken = this.captureToken) {
+    if (captureToken !== this.captureToken || !body || typeof body !== 'object') return false;
+    const t0 = Date.now();
+    this.telemetry.responsesObserved++;
+    this.telemetry.gismoResponsesReceived++;
+    this.telemetry.bodiesRead++;
+    this.telemetry.jsonParsed++;
+
+    const cls = classifyEndpoint(url, body);
+    if (cls.category === 'api_exception') {
+      this.telemetry.apiExceptions.push({ pattern: cls.pattern, ...cls.exception });
+      this.cache.recordPattern(cls.pattern, 'api_exception', false, 'api_exception');
+      return false;
+    }
+    if (cls.category === 'ignored' || !cls.valid) return false;
+    if (cls.bucket === 'genuine_statistics') this.telemetry.relevantStatResponses++;
+
+    const normUrlKey = url.split('?')[0];
+    if (!this.seenUrls.has(normUrlKey)) this.seenUrls.add(normUrlKey);
+    this.cache.recordPattern(cls.pattern, cls.category, cls.valid, cls.bucket);
+
+    const rec = {
+      url: redactUrl(url),
+      category: cls.category,
+      bucket: cls.bucket,
+      endpoint: cls.endpoint,
+      args: cls.args,
+      pattern: cls.pattern,
+      schema: cls.schema,
+      data: cls.data,
+      bytes: JSON.stringify(body).length,
+      at: t0,
+      elapsedMs: this.startedAt ? t0 - this.startedAt : 0,
+    };
+    this.records.push(rec);
+    this._storeInCache(rec);
+    return true;
+  }
+
+  // Direct read-only fetch against Sportradar's public stats.fn.sportradar.com Gismo endpoints
+  // when the embedded BangBet widget iframe (sportcenter.sir.sportradar.com/luckybus) fails to boot
+  // (e.g. HTTP 403 / ORB on cloud runners). Reuses the exact same GismoCache and parser pipeline.
+  async fetchDirectForMatch(ev, opts = {}) {
+    const fetchFn = opts.fetch || global.fetch;
+    if (typeof fetchFn !== 'function') return false;
+    const mid = Number((ev && ev.matchId) || extractMatchIdFromUrl(ev && ev.url) || this.activeMatchId || 0);
+    if (!mid) return false;
+    const token = this.captureToken;
+    const base = 'https://stats.fn.sportradar.com/common/en/Etc:UTC/gismo';
+    const timeoutMs = Number(opts.timeoutMs) || 8000;
+    const headers = {
+      Accept: 'application/json',
+      'User-Agent': 'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36',
+    };
+
+    const getOne = async (relPath) => {
+      const url = `${base}/${relPath}`;
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+      try {
+        const res = await fetchFn(url, { method: 'GET', headers, signal: ctrl.signal });
+        if (!res.ok) {
+          if (token === this.captureToken) {
+            this.telemetry.httpErrors.push({ url: redactUrl(url), status: res.status, isGismo: true });
+          }
+          return null;
+        }
+        const body = await res.json();
+        this._ingestDirectBody(url, body, token);
+        return body;
+      } catch (e) {
+        if (token === this.captureToken) {
+          this.telemetry.failedRequests.push({
+            url: redactUrl(url),
+            isGismo: true,
+            errorText: String(e && e.message ? e.message : e),
+            at: Date.now(),
+          });
+        }
+        return null;
+      } finally {
+        clearTimeout(timer);
+      }
+    };
+
+    // Wave 1: match_info + match_markets (win probabilities)
+    let mi = this.cache.get(`match_info:${mid}`);
+    const w1 = [];
+    if (!mi) w1.push(getOne(`match_info/${mid}`));
+    if (!this.cache.get(`match_probs:${mid}`)) w1.push(getOne(`match_markets/${mid}`));
+    if (w1.length) await Promise.all(w1);
+
+    mi = this.cache.get(`match_info:${mid}`);
+    const match = mi && mi.match;
+    if (!match || !match.teams) return false;
+
+    const seasonId = match._seasonid || 0;
+    const homeUid = Number((match.teams.home && (match.teams.home.uid || match.teams.home._id)) || 0);
+    const awayUid = Number((match.teams.away && (match.teams.away.uid || match.teams.away._id)) || 0);
+
+    // Wave 2: team form, H2H, standings, over/under, unique team stats, scoring/conceding, disciplinary (cached per team/season)
+    const w2 = [];
+    if (homeUid && !this.cache.get(`team_lastx:${homeUid}`)) w2.push(getOne(`stats_team_lastx/${homeUid}`));
+    if (awayUid && !this.cache.get(`team_lastx:${awayUid}`)) w2.push(getOne(`stats_team_lastx/${awayUid}`));
+    if (homeUid && awayUid) {
+      const h2hKey = `h2h:${Math.min(homeUid, awayUid)}:${Math.max(homeUid, awayUid)}`;
+      if (!this.cache.get(h2hKey)) w2.push(getOne(`stats_team_versusrecent/${homeUid}/${awayUid}`));
+    }
+    if (seasonId) {
+      if (!this.cache.get(`season_tables:${seasonId}`)) w2.push(getOne(`stats_season_tables/${seasonId}`));
+      if (!this.cache.get(`season_ou:${seasonId}`)) w2.push(getOne(`stats_season_overunder/${seasonId}`));
+      if (!this.cache.get(`season_uniqueteamstats:${seasonId}`)) w2.push(getOne(`stats_season_uniqueteamstats/${seasonId}`));
+      if (homeUid && !this.cache.get(`season_scoring:${seasonId}:${homeUid}`)) w2.push(getOne(`stats_season_teamscoringconceding/${seasonId}/${homeUid}`));
+      if (awayUid && !this.cache.get(`season_scoring:${seasonId}:${awayUid}`)) w2.push(getOne(`stats_season_teamscoringconceding/${seasonId}/${awayUid}`));
+      if (homeUid && !this.cache.get(`team_disc:${seasonId}:${homeUid}`)) w2.push(getOne(`stats_season_teamdisciplinary/${seasonId}/${homeUid}`));
+      if (awayUid && !this.cache.get(`team_disc:${seasonId}:${awayUid}`)) w2.push(getOne(`stats_season_teamdisciplinary/${seasonId}/${awayUid}`));
+    }
+    if (w2.length) await Promise.all(w2);
+    return true;
+  }
+
   _storeInCache(rec) {
     const { category, args, data } = rec;
     if (category === 'match_info' && data.match && data.match._id) {

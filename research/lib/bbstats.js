@@ -404,6 +404,18 @@ async function stats(page, ev, legacy, opts = {}) {
     // Final bounded drain so any in-flight response.text() / JSON.parse() completes before freezing snapshot
     await page.gismo.waitForQuiet(quietMs, 1200);
     gismoSt = page.gismo.assemble(ev);
+
+    // If the embedded BangBet Sportradar widget iframe failed to emit Gismo responses (e.g. HTTP 403 / ORB on cloud runners),
+    // fetch the exact same Sportradar Gismo JSON feeds directly from stats.fn.sportradar.com via GismoPageObserver.
+    if ((!gismoSt || !gismoSt.available) && typeof page.gismo.fetchDirectForMatch === 'function') {
+      const directOk = await page.gismo.fetchDirectForMatch(ev).catch(() => false);
+      if (directOk) {
+        gismoSt = page.gismo.assemble(ev);
+        if (gismoSt && gismoSt.available) {
+          gismoSt.source = 'sportradar-gismo-direct';
+        }
+      }
+    }
   }
 
   if (gismoSt && gismoSt.available) {
