@@ -1,0 +1,39 @@
+# Declarative Google Cloud Run Service Template (PREPARED ONLY — DO NOT DEPLOY WITHOUT APPROVAL)
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: betrobot-cloud
+  annotations:
+    run.googleapis.com/ingress: all
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/maxScale: "1"
+        run.googleapis.com/cpu-throttling: "true"
+    spec:
+      containerConcurrency: 1
+      timeoutSeconds: 900
+      containers:
+        - image: REGION-docker.pkg.dev/PROJECT_ID/betrobot/betrobot-cloud:latest
+          ports:
+            - containerPort: 8080
+          resources:
+            limits:
+              cpu: "1"
+              memory: 2Gi
+          env:
+            - name: MAX_CONCURRENT_JOBS
+              value: "1"
+            - name: MAX_JOBS_PER_DAY
+              value: "10"
+            - name: MAX_JOBS_PER_MONTH
+              value: "100"
+            - name: MAX_JOB_MINUTES
+              value: "15"
+            - name: MAX_ACTIVE_MINUTES_PER_DAY
+              value: "90"
+            - name: BOT_CONCURRENCY
+              value: "2"
+            # Supply BETROBOT_CLOUD_TOKEN via Secret Manager or --set-env-vars at deploy time

@@ -1,0 +1,76 @@
+{
+  "queryUrl": "stats_season_teamdisciplinary/140786/2058",
+  "doc": [
+    {
+      "event": "stats_season_teamdisciplinary",
+      "_dob": 1793737022,
+      "_maxage": 3600,
+      "data": {
+        "team": {
+          "_doc": "uniqueteam",
+          "_id": 2058,
+          "_rcid": 17,
+          "_sid": 1,
+          "name": "LASK",
+          "mediumname": "LASK Linz",
+          "suffix": null,
+          "abbr": "ASK",
+          "nickname": null,
+          "teamtypeid": 0,
+          "iscountry": false,
+          "sex": "m",
+          "haslogo": true,
+          "founded": "1908",
+          "website": null
+        },
+        "stats": {
+          "totalmatches": {
+            "total": 6,
+            "home": 3,
+            "away": 3
+          },
+          "yellowcards": {
+            "total": 11,
+            "home": 3,
+            "away": 8
+          },
+          "yellowcardsaverage": {
+            "total": 1.8333333333333333,
+            "home": 1,
+            "away": 2.6666666666666665
+          },
+          "yellowredcards": {
+            "total": 0,
+            "home": 0,
+            "away": 0
+          },
+          "yellowredcardsaverage": {
+            "total": 0,
+            "home": 0,
+            "away": 0
+          },
+          "redcards": {
+            "total": 0,
+            "home": 0,
+            "away": 0
+          },
+          "redcardsaverage": {
+            "total": 0,
+            "home": 0,
+            "away": 0
+          },
+          "penaltiesawardedagainst": {
+            "total": 1,
+            "home": 0,
+            "away": 1
+          },
+          "penaltiesawardedagainstaverage": {
+            "total": 0.16666666666666666,
+            "home": 0,
+            "away": 0.3333333333333333
+          }
+        }
+      }
+    }
+  ]
+}

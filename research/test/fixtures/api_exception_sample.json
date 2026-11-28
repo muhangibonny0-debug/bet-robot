@@ -1,0 +1,17 @@
+{
+  "queryUrl": "stats_cup_brackets/gm-74166014",
+  "doc": [
+    {
+      "event": "exception",
+      "_dob": 1793827981,
+      "_maxage": 10,
+      "data": {
+        "_doc": "exception",
+        "message": "Parameter bracketid is invalid.",
+        "code": 0,
+        "name": "InvalidArgument",
+        "query": "stats_cup_brackets"
+      }
+    }
+  ]
+}

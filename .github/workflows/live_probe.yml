@@ -1,0 +1,66 @@
+name: Live Runner Probe (Read-Only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      max_fixtures:
+        description: 'Number of weekend fixtures to probe (1-5)'
+        required: false
+        default: '2'
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      TZ: Africa/Kampala
+      PLAYWRIGHT_BROWSERS_PATH: ~/.cache/ms-playwright
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Cache research node_modules
+        id: npm-cache
+        uses: actions/cache@v4
+        with:
+          path: research/node_modules
+          key: ${{ runner.os }}-research-npm-${{ hashFiles('research/package.json') }}
+
+      - name: Install research dependencies (on cache miss)
+        if: steps.npm-cache.outputs.cache-hit != 'true'
+        working-directory: research
+        run: npm install --no-audit --no-fund
+
+      - name: Cache Playwright Chromium
+        id: pw-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-chromium-${{ hashFiles('research/package.json') }}
+
+      - name: Install Playwright Chromium
+        working-directory: research
+        run: |
+          if [ "${{ steps.pw-cache.outputs.cache-hit }}" != "true" ]; then
+            npx playwright install --with-deps chromium
+          else
+            npx playwright install-deps chromium
+          fi
+
+      - name: Run Read-Only Live Runner + Groq Probe (No Phone Gateway, No Bets)
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          PROBE_MAX_FIXTURES: ${{ inputs.max_fixtures }}
+        run: node research/tools/runner_live_probe.js
+
+      - name: Upload Probe Diagnostic Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-probe-report
+          path: research/out/live_probe_report.json
+          if-no-files-found: ignore
+          retention-days: 3

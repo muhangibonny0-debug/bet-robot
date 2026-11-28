@@ -1,0 +1,232 @@
+{
+  "queryUrl": "stats_season_teamscoringconceding/140786/656/-1",
+  "doc": [
+    {
+      "event": "stats_season_teamscoringconceding",
+      "_dob": 1793834688,
+      "_maxage": 3600,
+      "data": {
+        "team": {
+          "_doc": "uniqueteam",
+          "_id": 656,
+          "_rcid": 5,
+          "_sid": 1,
+          "name": "Bodoe/Glimt",
+          "mediumname": "Bodoe/Glimt",
+          "suffix": null,
+          "abbr": "BOG",
+          "nickname": null,
+          "teamtypeid": 0,
+          "iscountry": false,
+          "sex": "m",
+          "haslogo": true,
+          "founded": "1916",
+          "website": null
+        },
+        "stats": {
+          "totalmatches": {
+            "total": 8,
+            "home": 4,
+            "away": 4
+          },
+          "totalwins": {
+            "total": 4,
+            "home": 3,
+            "away": 1
+          },
+          "scoring": {
+            "goalsscored": {
+              "total": 16,
+              "home": 7,
+              "away": 9
+            },
+            "atleastonegoal": {
+              "total": 7,
+              "home": 3,
+              "away": 4
+            },
+            "failedtoscore": {
+              "total": 2,
+              "home": 1,
+              "away": 1
+            },
+            "scoringathalftime": {
+              "total": 4,
+              "home": 1,
+              "away": 3
+            },
+            "scoringatfulltime": {
+              "total": 6,
+              "home": 3,
+              "away": 3
+            },
+            "bothteamsscored": {
+              "total": 4,
+              "home": 1,
+              "away": 3
+            },
+            "goalsscoredfirsthalf": {
+              "total": 7,
+              "home": 2,
+              "away": 5
+            },
+            "goalsscoredaverage": {
+              "total": 2,
+              "home": 1.75,
+              "away": 2.25
+            },
+            "atleastonegoalaverage": {
+              "total": 0.875,
+              "home": 0.75,
+              "away": 1
+            },
+            "failedtoscoreaverage": {
+              "total": 0.25,
+              "home": 0.25,
+              "away": 0.25
+            },
+            "scoringathalftimeaverage": {
+              "total": 0.5,
+              "home": 0.25,
+              "away": 0.75
+            },
+            "scoringatfulltimeaverage": {
+              "total": 0.75,
+              "home": 0.75,
+              "away": 0.75
+            },
+            "goalmarginatvictoryaverage": {
+              "total": 1.75,
+              "home": 1.6666666666666667,
+              "away": 2
+            },
+            "halftimegoalmarginatvictoryaverage": {
+              "total": 1,
+              "home": 0.6666666666666666,
+              "away": 2
+            },
+            "bothteamsscoredaverage": {
+              "total": 0.5,
+              "home": 0.25,
+              "away": 0.75
+            },
+            "goalsscoredfirsthalfaverage": {
+              "total": 0.875,
+              "home": 0.5,
+              "away": 1.25
+            },
+            "goalsbyminutes": {
+              "0-15": {
+                "total": 0,
+                "home": 0,
+                "away": 0
+              },
+              "16-30": {
+                "total": 0.5,
+                "home": 0,
+                "away": 1
+              },
+              "31-45": {
+                "total": 0.375,
+                "home": 0.5,
+                "away": 0.25
+              },
+              "46-60": {
+                "total": 0.375,
+                "home": 0.5,
+                "away": 0.25
+              },
+              "61-75": {
+                "total": 0.25,
+                "home": 0.25,
+                "away": 0.25
+              },
+              "76-90": {
+                "total": 0.375,
+                "home": 0.25,
+                "away": 0.5
+              }
+            }
+          },
+          "conceding": {
+            "goalsconceded": {
+              "total": 15,
+              "home": 2,
+              "away": 13
+            },
+            "cleansheets": {
+              "total": 3,
+              "home": 3,
+              "away": 0
+            },
+            "goalsconcededfirsthalf": {
+              "total": 4,
+              "home": 0,
+              "away": 4
+            },
+            "goalsconcededaverage": {
+              "total": 1.875,
+              "home": 0.5,
+              "away": 3.25
+            },
+            "cleansheetsaverage": {
+              "total": 0.375,
+              "home": 0.75,
+              "away": 0
+            },
+            "goalsconcededfirsthalfaverage": {
+              "total": 0.5,
+              "home": 0,
+              "away": 1
+            },
+            "minutespergoalconceded": {
+              "total": 49.733333333333334,
+              "home": 186,
+              "away": 28.76923076923077
+            },
+            "goalsbyminutes": {
+              "0-15": {
+                "total": 0.125,
+                "home": 0,
+                "away": 0.25
+              },
+              "16-30": {
+                "total": 0.125,
+                "home": 0,
+                "away": 0.25
+              },
+              "31-45": {
+                "total": 0.25,
+                "home": 0,
+                "away": 0.5
+              },
+              "46-60": {
+                "total": 0.125,
+                "home": 0,
+                "away": 0.25
+              },
+              "61-75": {
+                "total": 0.375,
+                "home": 0.25,
+                "away": 0.5
+              },
+              "76-90": {
+                "total": 0.875,
+                "home": 0.25,
+                "away": 1.5
+              }
+            }
+          },
+          "averagegoalsbyminutes": {
+            "0-15": 0.4074074074074074,
+            "16-30": 0.47530864197530864,
+            "31-45": 0.5308641975308642,
+            "46-60": 0.5987654320987654,
+            "61-75": 0.5802469135802469,
+            "76-90": 0.6851851851851852
+          }
+        }
+      }
+    }
+  ]
+}

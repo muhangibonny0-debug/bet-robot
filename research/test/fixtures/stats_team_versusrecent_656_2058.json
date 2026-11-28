@@ -1,0 +1,569 @@
+{
+  "queryUrl": "stats_team_versusrecent/656/2058",
+  "doc": [
+    {
+      "event": "stats_team_versusrecent",
+      "_dob": 1795393044,
+      "_maxage": 3600,
+      "data": {
+        "livematchid": null,
+        "upcomingmatches": [
+          {
+            "_doc": "match",
+            "_doctype": "generic",
+            "_id": 74166014,
+            "_sid": 1,
+            "_rcid": 393,
+            "_tid": 151665,
+            "_utid": 7,
+            "round": 5,
+            "week": 48,
+            "teams": {
+              "home": {
+                "_doc": "team",
+                "_id": 17863576,
+                "_sid": 1,
+                "uid": 656,
+                "virtual": false,
+                "name": "Bodoe/Glimt",
+                "mediumname": "Bodoe/Glimt",
+                "abbr": "BOG",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              },
+              "away": {
+                "_doc": "team",
+                "_id": 12339638,
+                "_sid": 1,
+                "uid": 2058,
+                "virtual": false,
+                "name": "LASK",
+                "mediumname": "LASK Linz",
+                "abbr": "ASK",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              }
+            },
+            "tobeannounced": false,
+            "postponed": false,
+            "stadiumid": 1072,
+            "walkover": false,
+            "retired": false,
+            "comment": null,
+            "inlivescore": true,
+            "disqualified": false,
+            "neutralground": false,
+            "canceled": false,
+            "bestof": null,
+            "periods": null,
+            "result": {
+              "home": null,
+              "away": null,
+              "period": "nt",
+              "winner": null
+            },
+            "status": null,
+            "time": {
+              "_doc": "time",
+              "time": "17:45",
+              "date": "24/11/26",
+              "tz": "UTC",
+              "tzoffset": 0,
+              "uts": 1795542300
+            },
+            "numberofperiods": 2,
+            "_seasonid": 140786,
+            "roundname": {
+              "_doc": "tableround",
+              "_id": 5,
+              "name": 5
+            },
+            "referee": [
+              {
+                "_doc": "player",
+                "_id": 365890,
+                "name": "Meler, Halil Umut",
+                "birthdate": {
+                  "_doc": "time",
+                  "time": "00:00",
+                  "date": "01/08/86",
+                  "tz": "UTC",
+                  "tzoffset": 0,
+                  "uts": 523238400
+                },
+                "nationality": {
+                  "_doc": "countrycode",
+                  "_id": 218,
+                  "a2": "tr",
+                  "name": "Turkiye",
+                  "a3": "TUR",
+                  "ioc": "TUR",
+                  "continentid": 1,
+                  "continent": "Europe",
+                  "population": 82835000
+                },
+                "haslogo": false
+              }
+            ],
+            "manager": {
+              "home": {
+                "_doc": "player",
+                "_id": 565374,
+                "name": "Knutsen, Kjetil",
+                "birthdate": {
+                  "_doc": "time",
+                  "time": "00:00",
+                  "date": "02/10/68",
+                  "tz": "UTC",
+                  "tzoffset": 0,
+                  "uts": -39398400
+                },
+                "nationality": {
+                  "_doc": "countrycode",
+                  "_id": 160,
+                  "a2": "no",
+                  "name": "Norway",
+                  "a3": "NOR",
+                  "ioc": "NOR",
+                  "continentid": 1,
+                  "continent": "Europe",
+                  "population": 5290288
+                },
+                "primarypositiontype": null,
+                "haslogo": false
+              },
+              "away": {
+                "_doc": "player",
+                "_id": 11143,
+                "name": "Kuhbauer, Dietmar",
+                "birthdate": {
+                  "_doc": "time",
+                  "time": "00:00",
+                  "date": "04/04/71",
+                  "tz": "UTC",
+                  "tzoffset": 0,
+                  "uts": 39571200
+                },
+                "nationality": {
+                  "_doc": "countrycode",
+                  "_id": 14,
+                  "a2": "at",
+                  "name": "Austria",
+                  "a3": "AUT",
+                  "ioc": "AUT",
+                  "continentid": 1,
+                  "continent": "Europe",
+                  "population": 8772000
+                },
+                "primarypositiontype": null,
+                "haslogo": false
+              }
+            }
+          }
+        ],
+        "tournaments": {
+          "151665": {
+            "_doc": "tournament",
+            "_id": 151665,
+            "_sid": 1,
+            "_rcid": 393,
+            "_isk": 10,
+            "_tid": 151665,
+            "_utid": 7,
+            "_gender": "men",
+            "name": "UEFA Champions League",
+            "abbr": "",
+            "livetable": 108668,
+            "friendly": false,
+            "ground": null,
+            "tournamentlevelorder": 11000,
+            "tournamentlevelname": "",
+            "outdated": false,
+            "roundbyround": true,
+            "seasontype": "21",
+            "seasontypename": "Group stage",
+            "seasontypeunique": "91",
+            "seasonid": 140786,
+            "currentseason": 140786,
+            "year": "26/27"
+          }
+        },
+        "realcategories": {
+          "393": {
+            "_doc": "realcategory",
+            "_id": 393,
+            "_sid": 1,
+            "_rcid": 393,
+            "name": "International Clubs",
+            "cc": null
+          }
+        },
+        "teams": {
+          "656": {
+            "_doc": "uniqueteam",
+            "_id": 656,
+            "_rcid": 5,
+            "_sid": 1,
+            "name": "Bodoe/Glimt",
+            "mediumname": "Bodoe/Glimt",
+            "suffix": null,
+            "abbr": "BOG",
+            "nickname": null,
+            "teamtypeid": 0,
+            "iscountry": false,
+            "sex": "m",
+            "haslogo": true,
+            "founded": "1916",
+            "website": null
+          },
+          "2058": {
+            "_doc": "uniqueteam",
+            "_id": 2058,
+            "_rcid": 17,
+            "_sid": 1,
+            "name": "LASK",
+            "mediumname": "LASK Linz",
+            "suffix": null,
+            "abbr": "ASK",
+            "nickname": null,
+            "teamtypeid": 0,
+            "iscountry": false,
+            "sex": "m",
+            "haslogo": true,
+            "founded": "1908",
+            "website": null
+          }
+        },
+        "currentmanagers": {
+          "656": [
+            {
+              "_doc": "player",
+              "_id": 565374,
+              "name": "Knutsen, Kjetil",
+              "birthdate": {
+                "_doc": "time",
+                "time": "00:00",
+                "date": "02/10/68",
+                "tz": "UTC",
+                "tzoffset": 0,
+                "uts": -39398400
+              },
+              "nationality": {
+                "_doc": "countrycode",
+                "_id": 160,
+                "a2": "no",
+                "name": "Norway",
+                "a3": "NOR",
+                "ioc": "NOR",
+                "continentid": 1,
+                "continent": "Europe",
+                "population": 5290288
+              },
+              "primarypositiontype": null,
+              "haslogo": false,
+              "membersince": {
+                "_doc": "time",
+                "time": "00:00",
+                "date": "01/01/18",
+                "tz": "UTC",
+                "tzoffset": 0,
+                "uts": 1514764800
+              }
+            }
+          ],
+          "2058": [
+            {
+              "_doc": "player",
+              "_id": 11143,
+              "name": "Kuhbauer, Dietmar",
+              "birthdate": {
+                "_doc": "time",
+                "time": "00:00",
+                "date": "04/04/71",
+                "tz": "UTC",
+                "tzoffset": 0,
+                "uts": 39571200
+              },
+              "nationality": {
+                "_doc": "countrycode",
+                "_id": 14,
+                "a2": "at",
+                "name": "Austria",
+                "a3": "AUT",
+                "ioc": "AUT",
+                "continentid": 1,
+                "continent": "Europe",
+                "population": 8772000
+              },
+              "primarypositiontype": null,
+              "haslogo": false,
+              "membersince": {
+                "_doc": "time",
+                "time": "00:00",
+                "date": "10/10/25",
+                "tz": "UTC",
+                "tzoffset": 0,
+                "uts": 1760054400
+              }
+            }
+          ]
+        },
+        "jersey": {
+          "656": {
+            "base": "fde001",
+            "sleeve": "fce43f",
+            "number": "000000",
+            "type": "short_sleeves",
+            "real": true
+          },
+          "2058": {
+            "base": "f5f4f6",
+            "sleeve": "f4d205",
+            "number": "000000",
+            "stripes": "000000",
+            "type": "short_sleeves",
+            "sleevelong": "f3d002",
+            "real": true
+          }
+        },
+        "next": {
+          "_doc": "match",
+          "_doctype": "generic",
+          "_id": 74166014,
+          "_sid": 1,
+          "_rcid": 393,
+          "_tid": 151665,
+          "_utid": 7,
+          "round": 5,
+          "week": 48,
+          "teams": {
+            "home": {
+              "_doc": "team",
+              "_id": 17863576,
+              "_sid": 1,
+              "uid": 656,
+              "virtual": false,
+              "name": "Bodoe/Glimt",
+              "mediumname": "Bodoe/Glimt",
+              "abbr": "BOG",
+              "nickname": null,
+              "iscountry": false,
+              "haslogo": true
+            },
+            "away": {
+              "_doc": "team",
+              "_id": 12339638,
+              "_sid": 1,
+              "uid": 2058,
+              "virtual": false,
+              "name": "LASK",
+              "mediumname": "LASK Linz",
+              "abbr": "ASK",
+              "nickname": null,
+              "iscountry": false,
+              "haslogo": true
+            }
+          },
+          "tobeannounced": false,
+          "postponed": false,
+          "stadiumid": 1072,
+          "walkover": false,
+          "retired": false,
+          "comment": null,
+          "inlivescore": true,
+          "disqualified": false,
+          "neutralground": false,
+          "canceled": false,
+          "bestof": null,
+          "periods": null,
+          "result": {
+            "home": null,
+            "away": null,
+            "period": "nt",
+            "winner": null
+          },
+          "status": null,
+          "time": {
+            "_doc": "time",
+            "time": "17:45",
+            "date": "24/11/26",
+            "tz": "UTC",
+            "tzoffset": 0,
+            "uts": 1795542300
+          },
+          "numberofperiods": 2,
+          "_seasonid": 140786,
+          "roundname": {
+            "_doc": "tableround",
+            "_id": 5,
+            "name": 5
+          },
+          "referee": [
+            {
+              "_doc": "player",
+              "_id": 365890,
+              "name": "Meler, Halil Umut",
+              "birthdate": {
+                "_doc": "time",
+                "time": "00:00",
+                "date": "01/08/86",
+                "tz": "UTC",
+                "tzoffset": 0,
+                "uts": 523238400
+              },
+              "nationality": {
+                "_doc": "countrycode",
+                "_id": 218,
+                "a2": "tr",
+                "name": "Turkiye",
+                "a3": "TUR",
+                "ioc": "TUR",
+                "continentid": 1,
+                "continent": "Europe",
+                "population": 82835000
+              },
+              "haslogo": false
+            }
+          ],
+          "manager": {
+            "home": {
+              "_doc": "player",
+              "_id": 565374,
+              "name": "Knutsen, Kjetil",
+              "birthdate": {
+                "_doc": "time",
+                "time": "00:00",
+                "date": "02/10/68",
+                "tz": "UTC",
+                "tzoffset": 0,
+                "uts": -39398400
+              },
+              "nationality": {
+                "_doc": "countrycode",
+                "_id": 160,
+                "a2": "no",
+                "name": "Norway",
+                "a3": "NOR",
+                "ioc": "NOR",
+                "continentid": 1,
+                "continent": "Europe",
+                "population": 5290288
+              },
+              "primarypositiontype": null,
+              "haslogo": false
+            },
+            "away": {
+              "_doc": "player",
+              "_id": 11143,
+              "name": "Kuhbauer, Dietmar",
+              "birthdate": {
+                "_doc": "time",
+                "time": "00:00",
+                "date": "04/04/71",
+                "tz": "UTC",
+                "tzoffset": 0,
+                "uts": 39571200
+              },
+              "nationality": {
+                "_doc": "countrycode",
+                "_id": 14,
+                "a2": "at",
+                "name": "Austria",
+                "a3": "AUT",
+                "ioc": "AUT",
+                "continentid": 1,
+                "continent": "Europe",
+                "population": 8772000
+              },
+              "primarypositiontype": null,
+              "haslogo": false
+            }
+          },
+          "stadium": {
+            "_doc": "stadium",
+            "_id": "1072",
+            "name": "Aspmyra Stadion",
+            "description": "",
+            "city": "Bodo",
+            "country": "Norway",
+            "state": null,
+            "cc": {
+              "_doc": "countrycode",
+              "_id": 160,
+              "a2": "no",
+              "name": "Norway",
+              "a3": "NOR",
+              "ioc": "NOR",
+              "continentid": 1,
+              "continent": "Europe",
+              "population": 5290288
+            },
+            "capacity": "8270",
+            "hometeams": [
+              {
+                "_doc": "uniqueteam",
+                "_id": 656,
+                "_rcid": 5,
+                "_sid": 1,
+                "name": "Bodoe/Glimt",
+                "mediumname": "Bodoe/Glimt",
+                "suffix": null,
+                "abbr": "BOG",
+                "nickname": null,
+                "teamtypeid": 0,
+                "iscountry": false,
+                "sex": "m",
+                "haslogo": true,
+                "founded": "1916",
+                "website": null
+              },
+              {
+                "_doc": "uniqueteam",
+                "_id": 7323,
+                "_rcid": 5,
+                "_sid": 1,
+                "name": "Bodoe/Glimt 2",
+                "mediumname": "Bodoe/Glimt 2",
+                "suffix": null,
+                "abbr": "BG2",
+                "nickname": null,
+                "teamtypeid": 0,
+                "iscountry": false,
+                "sex": "m",
+                "haslogo": true,
+                "founded": null,
+                "website": null
+              },
+              {
+                "_doc": "uniqueteam",
+                "_id": 7348,
+                "_rcid": 5,
+                "_sid": 1,
+                "name": "Grand Bodoe",
+                "mediumname": "Grand Bodoe IK",
+                "suffix": null,
+                "abbr": "GBO",
+                "nickname": null,
+                "teamtypeid": 0,
+                "iscountry": false,
+                "sex": "f",
+                "haslogo": true,
+                "founded": null,
+                "website": null
+              }
+            ],
+            "constryear": "1966",
+            "address": "Fritjof Nansens väg 3 - 7, 8006 Bodø",
+            "googlecoords": "67.276701,14.384353",
+            "pitchsize": {
+              "x": 105,
+              "y": 65
+            }
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+research/node_modules/
+cloudflare/node_modules/
+notify/node_modules/
+
+# Local runtime artifacts, logs, screenshots, and local auth tokens (NEVER commit)
+research/out/
+cloud/state/
+notify/out.json
+*.log
+
+# Wrangler / environment secrets
+.wrangler/
+.dev.vars
+.env
+.env.*

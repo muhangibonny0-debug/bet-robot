@@ -1,0 +1,76 @@
+{
+  "queryUrl": "stats_season_teamdisciplinary/140786/656",
+  "doc": [
+    {
+      "event": "stats_season_teamdisciplinary",
+      "_dob": 1793738930,
+      "_maxage": 3600,
+      "data": {
+        "team": {
+          "_doc": "uniqueteam",
+          "_id": 656,
+          "_rcid": 5,
+          "_sid": 1,
+          "name": "Bodoe/Glimt",
+          "mediumname": "Bodoe/Glimt",
+          "suffix": null,
+          "abbr": "BOG",
+          "nickname": null,
+          "teamtypeid": 0,
+          "iscountry": false,
+          "sex": "m",
+          "haslogo": true,
+          "founded": "1916",
+          "website": null
+        },
+        "stats": {
+          "totalmatches": {
+            "total": 8,
+            "home": 4,
+            "away": 4
+          },
+          "yellowcards": {
+            "total": 6,
+            "home": 2,
+            "away": 4
+          },
+          "yellowcardsaverage": {
+            "total": 0.75,
+            "home": 0.5,
+            "away": 1
+          },
+          "yellowredcards": {
+            "total": 0,
+            "home": 0,
+            "away": 0
+          },
+          "yellowredcardsaverage": {
+            "total": 0,
+            "home": 0,
+            "away": 0
+          },
+          "redcards": {
+            "total": 1,
+            "home": 0,
+            "away": 1
+          },
+          "redcardsaverage": {
+            "total": 0.125,
+            "home": 0,
+            "away": 0.25
+          },
+          "penaltiesawardedagainst": {
+            "total": 0,
+            "home": 0,
+            "away": 0
+          },
+          "penaltiesawardedagainstaverage": {
+            "total": 0,
+            "home": 0,
+            "away": 0
+          }
+        }
+      }
+    }
+  ]
+}

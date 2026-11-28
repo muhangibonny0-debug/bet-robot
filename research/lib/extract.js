@@ -2,6 +2,14 @@
 // statistics and markets of one opened match. Nothing is invented: what is not shown is recorded as missing.
 const { sleep, norm, sameTeam, walk } = require('./util');
 const { catalogFor } = require('./markets');
+const approvedMarkets = require('./approved_markets');
+const sportMarkets = require('./sport_markets');
+
+function matchMarketForEvent(title, label, ev) {
+  const sp = String((ev && ev.sport) || 'football').toLowerCase();
+  if (sp === 'football') return approvedMarkets.matchApprovedMarket(title, label, ev);
+  return sportMarkets.matchSportMarket(sp, title, label, ev);
+}
 
 const STAT_TAB = /^(stats?|statistics|h2h|head ?to ?head|analysis|form|match stats?)$/i;
 const MKT_TAB = /^(markets?|all markets|odds|betting|all)$/i;
@@ -129,10 +137,21 @@ async function stats(page, ev) {
 }
 
 async function openMarkets(page) {
-  // BangBet match pages land on Markets by default; only click the Markets tab if no market prices are visible yet
+  // BangBet match pages land on Markets by default; check for ANY visible decimal odds buttons
+  // rather than assuming a specific market heading like "1x2" must exist.
   const alreadyVisible = await page.evaluate(() => {
-    const txt = document.body ? document.body.innerText : '';
-    return /\b1x2\b/i.test(txt) && /\d{1,2}\.\d{2}/.test(txt);
+    const priceRe = /^\d{1,3}\.\d{2}$/;
+    let count = 0;
+    for (const el of document.querySelectorAll('div,span,button')) {
+      if (el.children.length > 2) continue;
+      const t = (el.innerText || '').trim();
+      if (priceRe.test(t)) {
+        const r = el.getBoundingClientRect();
+        if (r.width >= 24 && r.height >= 18) count++;
+        if (count >= 2) return true;
+      }
+    }
+    return false;
   }).catch(() => false);
   if (!alreadyVisible) {
     await clickFirst(page, MKT_TAB);
@@ -148,35 +167,39 @@ async function openMarkets(page) {
 }
 
 async function expandAll(page) {
-  for (let r = 0; r < 3; r++) {
-    await page.evaluate(() => {
+  for (let r = 0; r < 2; r++) {
+    const expanded = await page.evaluate(() => {
       const els = Array.from(document.querySelectorAll('[aria-expanded="false"]'));
       els.forEach((e) => { try { e.click(); } catch (x) { /* ignore */ } });
-    }).catch(() => {});
-    await sleep(500);
+      return els.length;
+    }).catch(() => 0);
+    if (!expanded) break;
+    await sleep(220);
   }
-  // Follow the market list to its real end; do not assume it contains only a few screens.
+  // Follow the market list to its real end without unnecessary fixed sleeps.
   let still = 0;
-  while (still < 5) {
+  let steps = 0;
+  while (still < 2 && steps < 18) {
+    steps++;
     const moved = await page.evaluate(() => {
       const scrollables = Array.from(document.querySelectorAll('*'))
-        .filter(e => e.scrollHeight > e.clientHeight + 80)
-        .sort((a,b) => b.scrollHeight - a.scrollHeight);
+        .filter((e) => e.scrollHeight > e.clientHeight + 80)
+        .sort((a, b) => b.scrollHeight - a.scrollHeight);
       const target = scrollables[0];
       let moved = false;
       if (target) {
         const before = target.scrollTop;
-        target.scrollTop = Math.min(target.scrollHeight, before + Math.max(500, target.clientHeight * 0.85));
+        target.scrollTop = Math.min(target.scrollHeight, before + Math.max(600, target.clientHeight * 0.95));
         moved = target.scrollTop > before;
       }
       const y = window.scrollY;
-      window.scrollBy(0, Math.round(innerHeight * 0.85));
+      window.scrollBy(0, Math.round(innerHeight * 0.95));
       return moved || window.scrollY > y;
     }).catch(() => false);
-    await sleep(450);
+    await sleep(moved ? 180 : 220);
     still = moved ? 0 : still + 1;
   }
-  await page.evaluate(() => { window.scrollTo(0, 0); document.querySelectorAll('*').forEach(e => { if (e.scrollTop > 0) e.scrollTop = 0; }); }).catch(() => {});
+  await page.evaluate(() => { window.scrollTo(0, 0); document.querySelectorAll('*').forEach((e) => { if (e.scrollTop > 0) e.scrollTop = 0; }); }).catch(() => {});
 }
 
 // every price on the page with the title of its market and its label; elements are tagged for clicking.
@@ -248,22 +271,166 @@ const MKT_JS = () => {
   return out;
 };
 
-function marketsFromNet(net) {
+function parseBangbetOddsApi(net, ev = {}) {
   const out = [];
+  if (!Array.isArray(net) || !net.length) return out;
+  const seen = new Set();
   for (const r of net) {
+    if (!r || !r.body) continue;
+    const url = String(r.url || '');
+    const isOddsEndpoint = /\/api\/bet\/match\/odds/i.test(url);
+    const data = r.body.data || r.body;
+    const marketList = Array.isArray(data && data.marketList) ? data.marketList : null;
+    if (marketList && (isOddsEndpoint || marketList.some((g) => Array.isArray(g && g.markets)))) {
+      // If event matchId is known, verify response matches it when available
+      const respId = String((data && (data.id || data.eventId)) || '');
+      const evId = String((ev && (ev.matchId || ev.eventId)) || '');
+      if (respId && evId && !respId.includes(evId) && !evId.includes(respId)) {
+        const respH = String((data && data.homeTeamName) || '');
+        const respA = String((data && data.awayTeamName) || '');
+        if (respH && respA && ev.home && ev.away && (!sameTeam(respH, ev.home) || !sameTeam(respA, ev.away))) {
+          continue;
+        }
+      }
+      for (const group of marketList) {
+        if (!group || typeof group !== 'object') continue;
+        const groups = Array.isArray(group.groups) ? group.groups.filter((g) => typeof g === 'string') : [];
+        const subMarkets = Array.isArray(group.markets) ? group.markets : (Array.isArray(group.outcomes) ? [group] : []);
+        for (const m of subMarkets) {
+          if (!m || typeof m !== 'object') continue;
+          if (m.active === false || m.marketActive === false) continue;
+          if (m.marketStatus && !/active/i.test(String(m.marketStatus))) continue;
+          const title = String(m.name || m.marketName || group.name || '').trim();
+          if (!title) continue;
+          const outcomes = Array.isArray(m.outcomes) ? m.outcomes : [];
+          for (const o of outcomes) {
+            if (!o || typeof o !== 'object') continue;
+            if (o.active === false || o.outcomeActive === false || o.marketActive === false || o.matchActive === false) continue;
+            const label = String(o.desc || o.name || o.label || o.title || '').trim();
+            const price = Number(o.odds || o.price || o.odd || o.value);
+            if (!label || !Number.isFinite(price) || price <= 1 || price >= 1000) continue;
+            const key = `${norm(title)}|${norm(label)}|${price.toFixed(2)}`;
+            if (seen.has(key)) continue;
+            seen.add(key);
+            out.push({
+              i: -1,
+              title,
+              label,
+              odds: price,
+              pos: -1,
+              source: 'bangbet_odds_api',
+              marketGroups: groups.length ? groups : ['All'],
+              specifiers: String(m.specifiers || ''),
+            });
+          }
+        }
+      }
+    }
+  }
+  return out;
+}
+
+function marketsFromNet(net, ev = {}) {
+  const apiList = parseBangbetOddsApi(net, ev);
+  if (apiList.length) return apiList;
+  const out = [];
+  for (const r of (net || [])) {
     walk(r.body, (o) => {
       const name = typeof (o.name || o.title || o.marketName) === 'string' ? (o.name || o.title || o.marketName) : '';
       const arr = o.outcomes || o.selections || o.options || o.odds;
       if (!name || !Array.isArray(arr) || arr.length < 2) return;
       for (const x of arr) {
         if (!x || typeof x !== 'object') continue;
-        const label = x.name || x.label || x.title || '';
+        if (x.active === false || x.outcomeActive === false) continue;
+        const label = x.desc || x.name || x.label || x.title || '';
         const price = Number(x.odds || x.price || x.odd || x.value);
-        if (typeof label === 'string' && price > 1 && price < 1000) out.push({ i: -1, title: name, label, odds: price, pos: -1 });
+        if (typeof label === 'string' && label.trim() && price > 1 && price < 1000) {
+          out.push({ i: -1, title: name, label: label.trim(), odds: price, pos: -1, source: 'net_generic' });
+        }
       }
     });
   }
   return out;
+}
+
+// Switch BangBet's match-page horizontal market category tab (e.g. "All", "Goals", "Corner", "Half", "Main")
+// using real Playwright interaction (Swiper.js on mobile ignores some synthetic DOM clicks) and verify
+// that `.active-slide` genuinely switched to the requested tab.
+async function switchMarketTab(page, tabName) {
+  const target = String(tabName || '').trim().toLowerCase();
+  if (!target) return false;
+  const isAlreadyActive = async () => page.evaluate((wanted) => {
+    const a = document.querySelector('.active-slide');
+    return !!(a && (a.innerText || '').trim().toLowerCase() === wanted);
+  }, target).catch(() => false);
+
+  try {
+    if (await isAlreadyActive()) return true;
+    // Tag the exact matching swiper slide/title so Playwright can click it cleanly
+    const targetRect = await page.evaluate((wanted) => {
+      document.querySelectorAll('[data-bb-tab="1"]').forEach((n) => n.removeAttribute('data-bb-tab'));
+      const candidates = [...document.querySelectorAll('.swiper-slide, .swiper-title')];
+      for (const el of candidates) {
+        const txt = (el.innerText || '').trim().toLowerCase().replace(/\s+/g, ' ');
+        if (txt !== wanted) continue;
+        const r = el.getBoundingClientRect();
+        if (r.height < 14 || r.height > 80 || r.top < 100 || r.top > 520) continue;
+        el.scrollIntoView({ inline: 'center', block: 'nearest' });
+        el.setAttribute('data-bb-tab', '1');
+        const r2 = el.getBoundingClientRect();
+        return { x: r2.left + r2.width / 2, y: r2.top + r2.height / 2, w: r2.width, h: r2.height };
+      }
+      return null;
+    }, target).catch(() => null);
+    if (!targetRect) return false;
+
+    const loc = page.locator('[data-bb-tab="1"]').first();
+    await loc.click({ timeout: 3500, force: true }).catch(() => {});
+    await sleep(700);
+    if (!(await isAlreadyActive()) && page.mouse && typeof page.mouse.click === 'function') {
+      await page.mouse.click(targetRect.x, targetRect.y).catch(() => {});
+      await sleep(700);
+    }
+    if (!(await isAlreadyActive())) {
+      await page.evaluate(() => {
+        const el = document.querySelector('[data-bb-tab="1"]');
+        if (el) el.click();
+      }).catch(() => {});
+      await sleep(700);
+    }
+    const switched = await isAlreadyActive();
+    if (!switched) return false;
+
+    await sleep(400);
+    await page.evaluate(() => {
+      document.querySelectorAll('[aria-expanded="false"]').forEach((e) => {
+        try { e.click(); } catch (_) {}
+      });
+    }).catch(() => {});
+    await sleep(300);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+function preferredMarketTabsForLeg(leg) {
+  const id = (leg && leg.approvedMarketId) || '';
+  if (id === 'team_total' || id === 'team_total_over_0_5' || id === 'btts_no' || id === 'to_score_in_both_halves_no') return ['Goals', 'All'];
+  if (id === 'corner_1x2') return ['Corner', 'All'];
+  if (id === 'to_win_either_half' || id === 'first_half_total_over_0_5' || id === 'second_half_total_over_0_5' || id === 'first_half_double_chance' || id === 'highest_scoring_half_second') return ['Half', 'All'];
+  if (id === 'asian_handicap_plus_0_5' || id === 'asian_handicap_plus_1' || id === 'draw_no_bet') return ['Main', 'All'];
+  if (id === 'any_team_to_win') return ['All'];
+  return ['All', 'Main'];
+}
+
+async function switchMarketTabForLeg(page, leg) {
+  const tabsToTry = preferredMarketTabsForLeg(leg);
+  for (const tab of tabsToTry) {
+    const ok = await switchMarketTab(page, tab);
+    if (ok) return tab;
+  }
+  return '';
 }
 
 function classify(title, label, ev) {
@@ -369,11 +536,11 @@ function classify(title, label, ev) {
   return { type: 'OTHER' };
 }
 
-async function markets(page, ev) {
+async function markets(page, ev, opts = {}) {
   await openMarkets(page);
-  // Read currently displayed markets first; do not expand and scroll every market group.
+  // Read currently displayed DOM markets first (getting real clickable data-bb indices).
   const dom = await page.evaluate(MKT_JS).catch(() => []);
-  let list = dom;
+  let list = Array.isArray(dom) ? dom : [];
   // a price without a label (columns 1 X 2): the label comes from its position in the group
   const groups = new Map();
   for (const m of list) { if (!groups.has(m.title)) groups.set(m.title, []); groups.get(m.title).push(m); }
@@ -383,13 +550,52 @@ async function markets(page, ev) {
       g.forEach((m, k) => { if (!m.label) m.label = names[k] || `option ${k + 1}`; });
     }
   }
-  if (!list.length) list = marketsFromNet(page.net);
+  // Merge BangBet's live /api/bet/match/odds JSON markets (already received on page load, zero extra clicks!)
+  // so approved markets living on non-default tabs (Goals/Corner/All: Team Total, To Win Either Half,
+  // Any Team To Win, Corner 1X2) are accurately discovered and evaluated during research.
+  if (!opts.domOnly && Array.isArray(page.net) && page.net.length) {
+    const netMarkets = marketsFromNet(page.net, ev);
+    if (netMarkets.length) {
+      if (!list.length) {
+        list = netMarkets;
+      } else {
+        const domKeys = new Set();
+        for (const dm of list) {
+          const dap = matchMarketForEvent(dm.title, dm.label, ev);
+          if (dap && dap.approved) {
+            domKeys.add(`ap:${dap.approvedMarketId}:${dap.canonicalOutcome}`);
+          }
+          domKeys.add(`raw:${norm(dm.title)}|${norm(dm.label)}`);
+        }
+        for (const nm of netMarkets) {
+          const nap = matchMarketForEvent(nm.title, nm.label, ev);
+          const apKey = nap && nap.approved ? `ap:${nap.approvedMarketId}:${nap.canonicalOutcome}` : '';
+          const rawKey = `raw:${norm(nm.title)}|${norm(nm.label)}`;
+          if ((apKey && domKeys.has(apKey)) || domKeys.has(rawKey)) continue;
+          if (apKey) domKeys.add(apKey);
+          domKeys.add(rawKey);
+          list.push(nm);
+        }
+      }
+    }
+  }
   return list
     .filter((m) => m.title && Number.isFinite(m.odds) && m.odds > 1 && m.odds < 1000 && !/suspend|lock/i.test(`${m.title} ${m.label}`))
-    .map((m) => ({ ...m, ...classify(m.title, m.label, ev) }));
+    .map((m) => {
+      const legacyCls = classify(m.title, m.label, ev);
+      const ap = matchMarketForEvent(m.title, m.label, ev);
+      return {
+        ...m,
+        ...legacyCls,
+        approved: !!ap.approved,
+        approvedMarketId: ap.approved ? ap.approvedMarketId : '',
+        approvedMarketName: ap.approved ? ap.marketName : '',
+        canonicalOutcome: ap.approved ? ap.canonicalOutcome : '',
+      };
+    });
 }
 
 module.exports = {
   stats: (page, ev, opts) => require('./bbstats').stats(page, ev, parseStatsText, opts),
-  markets, openMarkets, classify, parseStatsText,
+  markets, openMarkets, expandAll, switchMarketTab, switchMarketTabForLeg, preferredMarketTabsForLeg, parseBangbetOddsApi, marketsFromNet, classify, parseStatsText,
 };

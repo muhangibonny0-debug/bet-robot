@@ -4,10 +4,10 @@ on:
   workflow_dispatch:
     inputs:
       job_id:
-        description: 'Job id'
+        description: 'Unique Job ID'
         required: true
       job:
-        description: 'Job as JSON'
+        description: 'Job request payload as JSON'
         required: true
 
 concurrency:
@@ -17,47 +17,94 @@ concurrency:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 90
     env:
       TZ: Africa/Kampala
+      PLAYWRIGHT_BROWSERS_PATH: ~/.cache/ms-playwright
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout BetRobot
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Install the browser and zero-cost tunnel client
-        run: |
-          cd research
-          npm install --no-audit --no-fund
-          npx playwright install --with-deps chromium
-          curl -fsSL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o /usr/local/bin/cloudflared
-          chmod +x /usr/local/bin/cloudflared
-          cloudflared --version
+      - name: Cache research node_modules
+        id: npm-cache
+        uses: actions/cache@v4
+        with:
+          path: research/node_modules
+          key: ${{ runner.os }}-research-npm-${{ hashFiles('research/package.json') }}
 
-      - name: Research
+      - name: Install research dependencies (on cache miss)
+        if: steps.npm-cache.outputs.cache-hit != 'true'
+        working-directory: research
+        run: npm install --no-audit --no-fund
+
+      - name: Cache Playwright Chromium browser
+        id: pw-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-chromium-${{ hashFiles('research/package.json') }}
+
+      - name: Install Playwright Chromium (only on cache miss)
+        working-directory: research
+        run: |
+          if [ "${{ steps.pw-cache.outputs.cache-hit }}" != "true" ]; then
+            npx playwright install --with-deps chromium
+          else
+            npx playwright install-deps chromium
+          fi
+
+      - name: Run BetRobot Research Engine + Groq AI Analyst
+        id: research
         env:
           JOB_ID: ${{ inputs.job_id }}
           JOB: ${{ inputs.job }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           BOT_PROXY: ${{ secrets.BOT_PROXY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          CLOUDFLARE_WORKER_URL: ${{ secrets.CLOUDFLARE_WORKER_URL }}
+          CLOUDFLARE_RUNNER_TOKEN: ${{ secrets.CLOUDFLARE_RUNNER_TOKEN }}
+          BOT_CONCURRENCY: '2'
         run: node research/run.js
 
-      - name: Send notifications
+      - name: Report unexpected runner failure to Cloudflare Coordinator
+        if: failure()
+        env:
+          JOB_ID: ${{ inputs.job_id }}
+          CLOUDFLARE_WORKER_URL: ${{ secrets.CLOUDFLARE_WORKER_URL }}
+          CLOUDFLARE_RUNNER_TOKEN: ${{ secrets.CLOUDFLARE_RUNNER_TOKEN }}
+        run: |
+          node -e "
+            const cf = require('./research/lib/cloudflare_client');
+            if (!cf.getConfig().enabled) process.exit(0);
+            cf.reportProgress(process.env.JOB_ID, {
+              status: 'failed',
+              stage: 'GitHub Actions runner failed unexpectedly',
+              error: 'Workflow step failed before verified completion.',
+              updated: Date.now()
+            }).then(() => process.exit(0));
+          "
+
+      - name: Send push notifications
         if: always()
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
-          cd notify
-          npm install firebase-admin
-          node send.js
+          if [ -n "$FIREBASE_SERVICE_ACCOUNT" ] && [ -f notify/out.json ]; then
+            cd notify
+            npm install --no-audit --no-fund firebase-admin
+            node send.js
+          fi
 
-      - name: Save the pictures and summary
+      - name: Preserve diagnostic artifacts on failure or completion
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: research-out
+          name: research-out-${{ inputs.job_id }}
           path: research/out
           if-no-files-found: ignore
           retention-days: 2

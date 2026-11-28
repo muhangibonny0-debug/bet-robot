@@ -1,0 +1,532 @@
+{
+  "queryUrl": "match_info/74166014",
+  "doc": [
+    {
+      "event": "match_info",
+      "_dob": 1795457685,
+      "_maxage": 3600,
+      "data": {
+        "_doc": "match_info",
+        "match": {
+          "_doc": "match",
+          "_doctype": "soccer",
+          "_id": 74166014,
+          "_sid": 1,
+          "_seasonid": 140786,
+          "_rcid": 393,
+          "_tid": 151665,
+          "_utid": 7,
+          "_dt": {
+            "_doc": "time",
+            "time": "17:45",
+            "date": "24/11/26",
+            "tz": "UTC",
+            "tzoffset": 0,
+            "uts": 1795542300
+          },
+          "round": 5,
+          "roundname": {
+            "_doc": "tableround",
+            "_id": 5,
+            "name": 5
+          },
+          "week": 48,
+          "coverage": {
+            "lineup": 0,
+            "formations": 0,
+            "livetable": 108668,
+            "injuries": 0,
+            "ballspotting": false,
+            "cornersonly": false,
+            "multicast": true,
+            "scoutmatch": 1,
+            "scoutcoveragestatus": 0,
+            "scoutconnected": false,
+            "liveodds": true,
+            "deepercoverage": true,
+            "tacticallineup": true,
+            "basiclineup": true,
+            "hasstats": true,
+            "inlivescore": true,
+            "advantage": null,
+            "tiebreak": null,
+            "paperscorecard": null,
+            "insights": true,
+            "penaltyshootout": 2,
+            "scouttest": false,
+            "lmtsupport": 4,
+            "venue": false,
+            "matchdatacomplete": false,
+            "mediacoverage": true,
+            "substitutions": true,
+            "officialstatsavailable": true,
+            "live": {
+              "id": 843,
+              "level": {
+                "name": "Level 1",
+                "value": 1
+              }
+            },
+            "match_creation": {
+              "id": 841,
+              "level": {
+                "name": "Level 1",
+                "value": 1
+              }
+            },
+            "player_service": {
+              "id": 855,
+              "level": {
+                "name": "Level 1",
+                "value": 1
+              }
+            },
+            "resulting": {
+              "id": 853,
+              "level": {
+                "name": "Level 1",
+                "value": 1
+              }
+            },
+            "stats_creation_cup": {
+              "id": 845,
+              "level": {
+                "name": "Cup 1",
+                "value": 1
+              }
+            },
+            "stats_creation_table": {
+              "id": 847,
+              "level": {
+                "name": "Level 1",
+                "value": 1
+              }
+            }
+          },
+          "result": {
+            "home": null,
+            "away": null,
+            "winner": null
+          },
+          "periods": null,
+          "updated_uts": 1795389770,
+          "ended_uts": false,
+          "p": "0",
+          "ptime": false,
+          "timeinfo": {
+            "injurytime": null,
+            "ended": null,
+            "started": null,
+            "played": null,
+            "remaining": null,
+            "running": false
+          },
+          "teams": {
+            "home": {
+              "_doc": "team",
+              "_id": 17863576,
+              "_sid": 1,
+              "uid": 656,
+              "virtual": false,
+              "name": "Bodoe/Glimt",
+              "mediumname": "Bodoe/Glimt",
+              "abbr": "BOG",
+              "nickname": null,
+              "iscountry": false,
+              "haslogo": true,
+              "cc": {
+                "_doc": "countrycode",
+                "_id": 160,
+                "a2": "no",
+                "name": "Norway",
+                "a3": "NOR",
+                "ioc": "NOR",
+                "continentid": 1,
+                "continent": "Europe",
+                "population": 5290288
+              },
+              "homerealcategoryid": 5,
+              "countrycode": {
+                "_doc": "countrycode",
+                "_id": 160,
+                "a2": "no",
+                "name": "Norway",
+                "a3": "NOR",
+                "ioc": "NOR",
+                "continentid": 1,
+                "continent": "Europe",
+                "population": 5290288
+              }
+            },
+            "away": {
+              "_doc": "team",
+              "_id": 12339638,
+              "_sid": 1,
+              "uid": 2058,
+              "virtual": false,
+              "name": "LASK",
+              "mediumname": "LASK Linz",
+              "abbr": "ASK",
+              "nickname": null,
+              "iscountry": false,
+              "haslogo": true,
+              "cc": {
+                "_doc": "countrycode",
+                "_id": 14,
+                "a2": "at",
+                "name": "Austria",
+                "a3": "AUT",
+                "ioc": "AUT",
+                "continentid": 1,
+                "continent": "Europe",
+                "population": 8772000
+              },
+              "homerealcategoryid": 17,
+              "countrycode": {
+                "_doc": "countrycode",
+                "_id": 14,
+                "a2": "at",
+                "name": "Austria",
+                "a3": "AUT",
+                "ioc": "AUT",
+                "continentid": 1,
+                "continent": "Europe",
+                "population": 8772000
+              }
+            }
+          },
+          "status": {
+            "_doc": "status",
+            "_id": 0,
+            "name": "Not started",
+            "shortName": "NS"
+          },
+          "removed": false,
+          "facts": true,
+          "stadiumid": 1072,
+          "localderby": false,
+          "weather": null,
+          "pitchcondition": null,
+          "temperature": null,
+          "wind": null,
+          "windadvantage": 0,
+          "matchstatus": false,
+          "postponed": false,
+          "cancelled": false,
+          "walkover": false,
+          "hf": 5.8,
+          "periodlength": 45,
+          "numberofperiods": 2,
+          "overtimelength": 15,
+          "tobeannounced": false,
+          "cards": {
+            "home": {
+              "yellow_count": 0,
+              "red_count": 0
+            },
+            "away": {
+              "yellow_count": 0,
+              "red_count": 0
+            }
+          }
+        },
+        "cities": {
+          "home": {
+            "_id": 29,
+            "name": "Bodo"
+          },
+          "away": {
+            "_id": 110,
+            "name": "Linz"
+          }
+        },
+        "stadium": {
+          "_doc": "stadium",
+          "_id": "1072",
+          "name": "Aspmyra Stadion",
+          "description": "",
+          "city": "Bodo",
+          "country": "Norway",
+          "state": null,
+          "cc": {
+            "_doc": "countrycode",
+            "_id": 160,
+            "a2": "no",
+            "name": "Norway",
+            "a3": "NOR",
+            "ioc": "NOR",
+            "continentid": 1,
+            "continent": "Europe",
+            "population": 5290288
+          },
+          "capacity": "8270",
+          "hometeams": [
+            {
+              "_doc": "uniqueteam",
+              "_id": 656,
+              "_rcid": 5,
+              "_sid": 1,
+              "name": "Bodoe/Glimt",
+              "mediumname": "Bodoe/Glimt",
+              "suffix": null,
+              "abbr": "BOG",
+              "nickname": null,
+              "teamtypeid": 0,
+              "iscountry": false,
+              "sex": "m",
+              "haslogo": true,
+              "founded": "1916",
+              "website": null
+            }
+          ],
+          "constryear": "1966",
+          "address": "Fritjof Nansens väg 3 - 7, 8006 Bodø",
+          "googlecoords": "67.276701,14.384353",
+          "pitchsize": {
+            "x": 105,
+            "y": 65
+          }
+        },
+        "tournament": {
+          "_doc": "tournament",
+          "_id": 151665,
+          "_sid": 1,
+          "_rcid": 393,
+          "_isk": 10,
+          "_tid": 151665,
+          "_utid": 7,
+          "_gender": "men",
+          "name": "UEFA Champions League",
+          "abbr": "",
+          "livetable": 108668,
+          "friendly": false,
+          "ground": null,
+          "tournamentlevelorder": 11000,
+          "tournamentlevelname": "",
+          "outdated": false,
+          "roundbyround": true,
+          "seasontype": "21",
+          "seasontypename": "Group stage",
+          "seasontypeunique": "91",
+          "seasonid": 140786,
+          "currentseason": 140786,
+          "year": "26/27"
+        },
+        "uniquetournament": {
+          "_doc": "uniquetournament",
+          "_id": 7,
+          "_utid": 7,
+          "_sid": 1,
+          "_rcid": 393,
+          "name": "UEFA Champions League",
+          "currentseason": 140786,
+          "friendly": false
+        },
+        "sport": {
+          "_doc": "sport",
+          "_id": 1,
+          "_sid": 1,
+          "name": "Soccer"
+        },
+        "realcategory": {
+          "_doc": "realcategory",
+          "_id": 393,
+          "_sid": 1,
+          "_rcid": 393,
+          "name": "International Clubs",
+          "cc": null
+        },
+        "season": {
+          "_id": "140786",
+          "_doc": "season",
+          "_utid": 7,
+          "_sid": 1,
+          "name": "UEFA Champions League 26/27",
+          "abbr": "UCL 26/27",
+          "start": {
+            "_doc": "time",
+            "time": "00:00",
+            "date": "07/07/26",
+            "tz": "UTC",
+            "tzoffset": 0,
+            "uts": 1783382400
+          },
+          "end": {
+            "_doc": "time",
+            "time": "23:59",
+            "date": "05/06/27",
+            "tz": "UTC",
+            "tzoffset": 0,
+            "uts": 1812239999
+          },
+          "neutralground": false,
+          "friendly": false,
+          "currentseasonid": 140786,
+          "year": "26/27"
+        },
+        "referee": {
+          "_doc": "player",
+          "_id": 365890,
+          "name": "Meler, Halil Umut",
+          "birthdate": {
+            "_doc": "time",
+            "time": "00:00",
+            "date": "01/08/86",
+            "tz": "UTC",
+            "tzoffset": 0,
+            "uts": 523238400
+          },
+          "nationality": {
+            "_doc": "countrycode",
+            "_id": 218,
+            "a2": "tr",
+            "name": "Turkiye",
+            "a3": "TUR",
+            "ioc": "TUR",
+            "continentid": 1,
+            "continent": "Europe",
+            "population": 82835000
+          },
+          "haslogo": false
+        },
+        "manager": {
+          "home": {
+            "_doc": "player",
+            "_id": 565374,
+            "name": "Knutsen, Kjetil",
+            "birthdate": {
+              "_doc": "time",
+              "time": "00:00",
+              "date": "02/10/68",
+              "tz": "UTC",
+              "tzoffset": 0,
+              "uts": -39398400
+            },
+            "nationality": {
+              "_doc": "countrycode",
+              "_id": 160,
+              "a2": "no",
+              "name": "Norway",
+              "a3": "NOR",
+              "ioc": "NOR",
+              "continentid": 1,
+              "continent": "Europe",
+              "population": 5290288
+            },
+            "primarypositiontype": null,
+            "haslogo": false
+          },
+          "away": {
+            "_doc": "player",
+            "_id": 11143,
+            "name": "Kuhbauer, Dietmar",
+            "birthdate": {
+              "_doc": "time",
+              "time": "00:00",
+              "date": "04/04/71",
+              "tz": "UTC",
+              "tzoffset": 0,
+              "uts": 39571200
+            },
+            "nationality": {
+              "_doc": "countrycode",
+              "_id": 14,
+              "a2": "at",
+              "name": "Austria",
+              "a3": "AUT",
+              "ioc": "AUT",
+              "continentid": 1,
+              "continent": "Europe",
+              "population": 8772000
+            },
+            "primarypositiontype": null,
+            "haslogo": false
+          }
+        },
+        "jerseys": {
+          "home": {
+            "player": {
+              "base": "fde001",
+              "sleeve": "fce43f",
+              "number": "000000",
+              "type": "short_sleeves",
+              "real": true
+            },
+            "GK": {
+              "base": "00aabb",
+              "sleeve": "1c1e20",
+              "number": "f0efef",
+              "type": "short_sleeves",
+              "real": true
+            }
+          },
+          "away": {
+            "player": {
+              "base": "f5f4f6",
+              "sleeve": "f4d205",
+              "number": "000000",
+              "stripes": "000000",
+              "type": "short_sleeves",
+              "sleevelong": "f3d002",
+              "real": true
+            },
+            "GK": {
+              "base": "3d488b",
+              "sleeve": "ebebf0",
+              "number": "fbf9f9",
+              "squares": "000000",
+              "type": "short_sleeves",
+              "real": true
+            }
+          }
+        },
+        "statscoverage": {
+          "complexstat": true,
+          "overunder": true,
+          "overunderhalftime": true,
+          "fixtures": true,
+          "cuproster": true,
+          "headtohead": true,
+          "lineups": true,
+          "formations": true,
+          "topgoals": true,
+          "topassists": true,
+          "disciplinary": true,
+          "redcards": true,
+          "yellowcards": true,
+          "goalminute": true,
+          "goalminscorer": true,
+          "substitutions": true,
+          "squadservice": true,
+          "livescoreeventthrowin": true,
+          "livescoreeventgoalkick": true,
+          "livescoreeventfreekick": true,
+          "livescoreeventshotsoffgoal": true,
+          "livescoreeventshotsongoal": true,
+          "livescoreeventgoalkeepersave": true,
+          "livescoreeventcornerkick": true,
+          "livescoreeventoffside": true,
+          "livescoreeventfouls": true,
+          "livescoreeventpossesion": true,
+          "referee": true,
+          "stadium": true,
+          "livetable": true,
+          "halftimetable": true,
+          "leaguetable": true,
+          "formtable": true,
+          "secondhalftables": true,
+          "divisionview": true,
+          "matchdetails": true,
+          "staffmanagers": true,
+          "staffteamofficials": false,
+          "staffassistantcoaches": false,
+          "jerseys": true,
+          "goalscorer": true,
+          "deepercoverage": true,
+          "insights": true,
+          "tablerules": true
+        }
+      }
+    }
+  ]
+}

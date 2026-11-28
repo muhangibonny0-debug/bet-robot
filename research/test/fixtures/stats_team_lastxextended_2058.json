@@ -1,0 +1,2878 @@
+{
+  "queryUrl": "stats_team_lastxextended/2058",
+  "doc": [
+    {
+      "event": "stats_team_lastxextended",
+      "_dob": 1795458917,
+      "_maxage": 600,
+      "data": {
+        "team": {
+          "_doc": "uniqueteam",
+          "_id": 2058,
+          "_rcid": 17,
+          "_sid": 1,
+          "name": "LASK",
+          "mediumname": "LASK Linz",
+          "suffix": null,
+          "abbr": "ASK",
+          "nickname": null,
+          "teamtypeid": 0,
+          "iscountry": false,
+          "sex": "m",
+          "haslogo": true,
+          "founded": "1908",
+          "website": null
+        },
+        "matches": [
+          {
+            "_doc": "match",
+            "_doctype": "generic",
+            "_id": 72345580,
+            "_sid": 1,
+            "_rcid": 17,
+            "_tid": 29,
+            "_utid": 45,
+            "round": 13,
+            "week": 47,
+            "teams": {
+              "home": {
+                "_doc": "team",
+                "_id": 6588,
+                "_sid": 1,
+                "uid": 2058,
+                "virtual": false,
+                "name": "LASK",
+                "mediumname": "LASK Linz",
+                "abbr": "ASK",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              },
+              "away": {
+                "_doc": "team",
+                "_id": 11008555,
+                "_sid": 1,
+                "uid": 2075,
+                "virtual": false,
+                "name": "Hartberg",
+                "mediumname": "TSV Hartberg",
+                "abbr": "HTB",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              }
+            },
+            "tobeannounced": false,
+            "postponed": false,
+            "stadiumid": 70019,
+            "walkover": false,
+            "retired": false,
+            "comment": "1:0 (27.) X.Mbuyamba, 2:0 (34.) K.Jorgensen, 2:1 (40.) O.Lukic",
+            "inlivescore": true,
+            "disqualified": false,
+            "neutralground": false,
+            "canceled": false,
+            "bestof": null,
+            "periods": {
+              "ft": {
+                "home": 2,
+                "away": 1
+              },
+              "p1": {
+                "home": 2,
+                "away": 1
+              }
+            },
+            "result": {
+              "home": 2,
+              "away": 1,
+              "period": "nt",
+              "winner": "home"
+            },
+            "status": null,
+            "time": {
+              "_doc": "time",
+              "time": "16:00",
+              "date": "21/11/26",
+              "tz": "UTC",
+              "tzoffset": 0,
+              "uts": 1795276800
+            },
+            "numberofperiods": 2,
+            "_seasonid": 140798,
+            "roundname": {
+              "_doc": "tableround",
+              "_id": 13,
+              "name": 13
+            },
+            "corners": {
+              "away": 6,
+              "home": 8
+            },
+            "firstgoal": "home",
+            "lastgoal": "away"
+          },
+          {
+            "_doc": "match",
+            "_doctype": "generic",
+            "_id": 72345574,
+            "_sid": 1,
+            "_rcid": 17,
+            "_tid": 29,
+            "_utid": 45,
+            "round": 12,
+            "week": 45,
+            "teams": {
+              "home": {
+                "_doc": "team",
+                "_id": 6591,
+                "_sid": 1,
+                "uid": 2049,
+                "virtual": false,
+                "name": "Ried",
+                "mediumname": "SV Ried",
+                "abbr": "SVR",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              },
+              "away": {
+                "_doc": "team",
+                "_id": 6588,
+                "_sid": 1,
+                "uid": 2058,
+                "virtual": false,
+                "name": "LASK",
+                "mediumname": "LASK Linz",
+                "abbr": "ASK",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              }
+            },
+            "tobeannounced": false,
+            "postponed": false,
+            "stadiumid": 633,
+            "walkover": false,
+            "retired": false,
+            "comment": "0:1 (3.) C.Lang, 1:1 (32.) M.Freckleton (og), 2:1 (37.) A.Bajic, 2:2 (39.) A., 2:3 (90.) M.Usor, 2:4 (90.) K.Danek",
+            "inlivescore": true,
+            "disqualified": false,
+            "neutralground": false,
+            "canceled": false,
+            "bestof": null,
+            "periods": {
+              "ft": {
+                "home": 2,
+                "away": 4
+              },
+              "p1": {
+                "home": 2,
+                "away": 2
+              }
+            },
+            "result": {
+              "home": 2,
+              "away": 4,
+              "period": "nt",
+              "winner": "away"
+            },
+            "status": null,
+            "time": {
+              "_doc": "time",
+              "time": "18:30",
+              "date": "07/11/26",
+              "tz": "UTC",
+              "tzoffset": 0,
+              "uts": 1794076200
+            },
+            "numberofperiods": 2,
+            "_seasonid": 140798,
+            "roundname": {
+              "_doc": "tableround",
+              "_id": 12,
+              "name": 12
+            },
+            "corners": {
+              "away": 3,
+              "home": 4
+            },
+            "firstgoal": "away",
+            "lastgoal": "away"
+          },
+          {
+            "_doc": "match",
+            "_doctype": "generic",
+            "_id": 74165990,
+            "_sid": 1,
+            "_rcid": 393,
+            "_tid": 151665,
+            "_utid": 7,
+            "round": 4,
+            "week": 45,
+            "teams": {
+              "home": {
+                "_doc": "team",
+                "_id": 12339638,
+                "_sid": 1,
+                "uid": 2058,
+                "virtual": false,
+                "name": "LASK",
+                "mediumname": "LASK Linz",
+                "abbr": "ASK",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              },
+              "away": {
+                "_doc": "team",
+                "_id": 1664178,
+                "_sid": 1,
+                "uid": 2404,
+                "virtual": false,
+                "name": "Slovan Bratislava",
+                "mediumname": "SK Slovan Bratislava",
+                "abbr": "SLO",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              }
+            },
+            "tobeannounced": false,
+            "postponed": false,
+            "stadiumid": 70019,
+            "walkover": false,
+            "retired": false,
+            "comment": "1:0 (19.) K.Jorgensen, 2:0 (37.) K.Jorgensen, 3:0 (44.) R.Ljubicic, 4:0 (48.) S.Adeniran",
+            "inlivescore": true,
+            "disqualified": false,
+            "neutralground": false,
+            "canceled": false,
+            "bestof": null,
+            "periods": {
+              "ft": {
+                "home": 4,
+                "away": 0
+              },
+              "p1": {
+                "home": 3,
+                "away": 0
+              }
+            },
+            "result": {
+              "home": 4,
+              "away": 0,
+              "period": "nt",
+              "winner": "home"
+            },
+            "status": null,
+            "time": {
+              "_doc": "time",
+              "time": "20:00",
+              "date": "03/11/26",
+              "tz": "UTC",
+              "tzoffset": 0,
+              "uts": 1793736000
+            },
+            "numberofperiods": 2,
+            "_seasonid": 140786,
+            "roundname": {
+              "_doc": "tableround",
+              "_id": 4,
+              "name": 4
+            },
+            "corners": {
+              "away": 2,
+              "home": 8
+            },
+            "firstgoal": "home",
+            "lastgoal": "home"
+          },
+          {
+            "_doc": "match",
+            "_doctype": "generic",
+            "_id": 72345558,
+            "_sid": 1,
+            "_rcid": 17,
+            "_tid": 29,
+            "_utid": 45,
+            "round": 11,
+            "week": 44,
+            "teams": {
+              "home": {
+                "_doc": "team",
+                "_id": 6588,
+                "_sid": 1,
+                "uid": 2058,
+                "virtual": false,
+                "name": "LASK",
+                "mediumname": "LASK Linz",
+                "abbr": "ASK",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              },
+              "away": {
+                "_doc": "team",
+                "_id": 12415310,
+                "_sid": 1,
+                "uid": 5405,
+                "virtual": false,
+                "name": "Tirol",
+                "mediumname": "WSG Tirol",
+                "abbr": "WSG",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              }
+            },
+            "tobeannounced": false,
+            "postponed": false,
+            "stadiumid": 70019,
+            "walkover": false,
+            "retired": false,
+            "comment": "0:1 (16.) M.Wels, 1:1 (23.) A.Schoepf, 2:1 (48.) R.Ljubicic",
+            "inlivescore": true,
+            "disqualified": false,
+            "neutralground": false,
+            "canceled": false,
+            "bestof": null,
+            "periods": {
+              "ft": {
+                "home": 2,
+                "away": 1
+              },
+              "p1": {
+                "home": 1,
+                "away": 1
+              }
+            },
+            "result": {
+              "home": 2,
+              "away": 1,
+              "period": "nt",
+              "winner": "home"
+            },
+            "status": null,
+            "time": {
+              "_doc": "time",
+              "time": "18:30",
+              "date": "31/10/26",
+              "tz": "UTC",
+              "tzoffset": 0,
+              "uts": 1793471400
+            },
+            "numberofperiods": 2,
+            "_seasonid": 140798,
+            "roundname": {
+              "_doc": "tableround",
+              "_id": 11,
+              "name": 11
+            },
+            "corners": {
+              "away": 2,
+              "home": 1
+            },
+            "firstgoal": "away",
+            "lastgoal": "home"
+          },
+          {
+            "_doc": "match",
+            "_doctype": "generic",
+            "_id": 74411778,
+            "_sid": 1,
+            "_rcid": 17,
+            "_tid": 69,
+            "_utid": 445,
+            "round": 4,
+            "week": 44,
+            "teams": {
+              "home": {
+                "_doc": "team",
+                "_id": 6918,
+                "_sid": 1,
+                "uid": 2058,
+                "virtual": false,
+                "name": "LASK",
+                "mediumname": "LASK Linz",
+                "abbr": "ASK",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              },
+              "away": {
+                "_doc": "team",
+                "_id": 6924,
+                "_sid": 1,
+                "uid": 2049,
+                "virtual": false,
+                "name": "Ried",
+                "mediumname": "SV Ried",
+                "abbr": "SVR",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              }
+            },
+            "tobeannounced": false,
+            "postponed": false,
+            "stadiumid": 70019,
+            "walkover": false,
+            "retired": false,
+            "comment": "0:1 (36.) Y.Maart, 0:2 (47.) D.Radonjic, 1:2 (51.) A., 1:3 (76.) Y.Maart, 2:3 (84.) R.Ljubicic, 3:3 (90.) X.Mbuyamba, 4:3 (111.) M.Usor, 5:3 (120.) S.Adeniran, 5:4 (120.) P.Pomer",
+            "inlivescore": true,
+            "disqualified": false,
+            "neutralground": false,
+            "canceled": false,
+            "bestof": null,
+            "periods": {
+              "ft": {
+                "home": 3,
+                "away": 3
+              },
+              "ot": {
+                "home": 5,
+                "away": 4
+              },
+              "p1": {
+                "home": 0,
+                "away": 1
+              }
+            },
+            "result": {
+              "home": 5,
+              "away": 4,
+              "period": "ot",
+              "winner": "home"
+            },
+            "status": null,
+            "time": {
+              "_doc": "time",
+              "time": "19:30",
+              "date": "28/10/26",
+              "tz": "UTC",
+              "tzoffset": 0,
+              "uts": 1793215800
+            },
+            "numberofperiods": 2,
+            "_seasonid": 140802,
+            "roundname": {
+              "_doc": "cupround",
+              "_id": 4,
+              "displaynumber": null,
+              "name": "1/8",
+              "shortname": "R16",
+              "cuproundnumber": null,
+              "statisticssortorder": 5
+            },
+            "cuproundmatchnumber": "1",
+            "cuproundnumberofmatches": "1",
+            "corners": {
+              "home": 10,
+              "away": 0
+            },
+            "firstgoal": "away",
+            "lastgoal": "away"
+          },
+          {
+            "_doc": "match",
+            "_doctype": "generic",
+            "_id": 72345546,
+            "_sid": 1,
+            "_rcid": 17,
+            "_tid": 29,
+            "_utid": 45,
+            "round": 10,
+            "week": 43,
+            "teams": {
+              "home": {
+                "_doc": "team",
+                "_id": 6588,
+                "_sid": 1,
+                "uid": 2058,
+                "virtual": false,
+                "name": "LASK",
+                "mediumname": "LASK Linz",
+                "abbr": "ASK",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              },
+              "away": {
+                "_doc": "team",
+                "_id": 6593,
+                "_sid": 1,
+                "uid": 2046,
+                "virtual": false,
+                "name": "Salzburg",
+                "mediumname": "FC Salzburg",
+                "abbr": "RBS",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              }
+            },
+            "tobeannounced": false,
+            "postponed": false,
+            "stadiumid": 70019,
+            "walkover": false,
+            "retired": false,
+            "comment": "1:0 (13.) S.Adeniran, 1:1 (25.) H.Tabakovic, 1:2 (49.) H.Tabakovic, 1:3 (74.) H.Tabakovic",
+            "inlivescore": true,
+            "disqualified": false,
+            "neutralground": false,
+            "canceled": false,
+            "bestof": null,
+            "periods": {
+              "ft": {
+                "home": 1,
+                "away": 3
+              },
+              "p1": {
+                "home": 1,
+                "away": 1
+              }
+            },
+            "result": {
+              "home": 1,
+              "away": 3,
+              "period": "nt",
+              "winner": "away"
+            },
+            "status": null,
+            "time": {
+              "_doc": "time",
+              "time": "16:00",
+              "date": "25/10/26",
+              "tz": "UTC",
+              "tzoffset": 0,
+              "uts": 1792944000
+            },
+            "numberofperiods": 2,
+            "_seasonid": 140798,
+            "roundname": {
+              "_doc": "tableround",
+              "_id": 10,
+              "name": 10
+            },
+            "corners": {
+              "away": 1,
+              "home": 4
+            },
+            "firstgoal": "home",
+            "lastgoal": "away"
+          },
+          {
+            "_doc": "match",
+            "_doctype": "generic",
+            "_id": 74165974,
+            "_sid": 1,
+            "_rcid": 393,
+            "_tid": 151665,
+            "_utid": 7,
+            "round": 3,
+            "week": 43,
+            "teams": {
+              "home": {
+                "_doc": "team",
+                "_id": 6598,
+                "_sid": 1,
+                "uid": 3001,
+                "virtual": false,
+                "name": "Sporting CP",
+                "mediumname": "Sporting CP",
+                "abbr": "SPO",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              },
+              "away": {
+                "_doc": "team",
+                "_id": 12339638,
+                "_sid": 1,
+                "uid": 2058,
+                "virtual": false,
+                "name": "LASK",
+                "mediumname": "LASK Linz",
+                "abbr": "ASK",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              }
+            },
+            "tobeannounced": false,
+            "postponed": false,
+            "stadiumid": 910,
+            "walkover": false,
+            "retired": false,
+            "comment": "1:0 (5.) L.Suarez (pen), 1:1 (15.) C.Lang, 1:2 (63.) S.Kalajdzic, 1:3 (68.) K.Danek, 2:3 (89.) L.Suarez",
+            "inlivescore": true,
+            "disqualified": false,
+            "neutralground": false,
+            "canceled": false,
+            "bestof": null,
+            "periods": {
+              "ft": {
+                "home": 2,
+                "away": 3
+              },
+              "p1": {
+                "home": 1,
+                "away": 1
+              }
+            },
+            "result": {
+              "home": 2,
+              "away": 3,
+              "period": "nt",
+              "winner": "away"
+            },
+            "status": null,
+            "time": {
+              "_doc": "time",
+              "time": "19:00",
+              "date": "21/10/26",
+              "tz": "UTC",
+              "tzoffset": 0,
+              "uts": 1792609200
+            },
+            "numberofperiods": 2,
+            "_seasonid": 140786,
+            "roundname": {
+              "_doc": "tableround",
+              "_id": 3,
+              "name": 3
+            },
+            "corners": {
+              "home": 7,
+              "away": 4
+            },
+            "firstgoal": "home",
+            "lastgoal": "home"
+          },
+          {
+            "_doc": "match",
+            "_doctype": "generic",
+            "_id": 72345542,
+            "_sid": 1,
+            "_rcid": 17,
+            "_tid": 29,
+            "_utid": 45,
+            "round": 9,
+            "week": 42,
+            "teams": {
+              "home": {
+                "_doc": "team",
+                "_id": 32090,
+                "_sid": 1,
+                "uid": 2062,
+                "virtual": false,
+                "name": "Lustenau",
+                "mediumname": "Austria Lustenau",
+                "abbr": "ALU",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              },
+              "away": {
+                "_doc": "team",
+                "_id": 6588,
+                "_sid": 1,
+                "uid": 2058,
+                "virtual": false,
+                "name": "LASK",
+                "mediumname": "LASK Linz",
+                "abbr": "ASK",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              }
+            },
+            "tobeannounced": false,
+            "postponed": false,
+            "stadiumid": 736,
+            "walkover": false,
+            "retired": false,
+            "comment": "0:1 (56.) S.Kalajdzic, 0:2 (64.) S.Adeniran, 0:3 (88.) C.Lang (pen), 0:4 (90.) C.Lang",
+            "inlivescore": true,
+            "disqualified": false,
+            "neutralground": false,
+            "canceled": false,
+            "bestof": null,
+            "periods": {
+              "ft": {
+                "home": 0,
+                "away": 4
+              },
+              "p1": {
+                "home": 0,
+                "away": 0
+              }
+            },
+            "result": {
+              "home": 0,
+              "away": 4,
+              "period": "nt",
+              "winner": "away"
+            },
+            "status": null,
+            "time": {
+              "_doc": "time",
+              "time": "15:00",
+              "date": "17/10/26",
+              "tz": "UTC",
+              "tzoffset": 0,
+              "uts": 1792249200
+            },
+            "numberofperiods": 2,
+            "_seasonid": 140798,
+            "roundname": {
+              "_doc": "tableround",
+              "_id": 9,
+              "name": 9
+            },
+            "corners": {
+              "away": 12,
+              "home": 4
+            },
+            "firstgoal": "away",
+            "lastgoal": "away"
+          },
+          {
+            "_doc": "match",
+            "_doctype": "generic",
+            "_id": 74165924,
+            "_sid": 1,
+            "_rcid": 393,
+            "_tid": 151665,
+            "_utid": 7,
+            "round": 2,
+            "week": 42,
+            "teams": {
+              "home": {
+                "_doc": "team",
+                "_id": 12339638,
+                "_sid": 1,
+                "uid": 2058,
+                "virtual": false,
+                "name": "LASK",
+                "mediumname": "LASK Linz",
+                "abbr": "ASK",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              },
+              "away": {
+                "_doc": "team",
+                "_id": 45745,
+                "_sid": 1,
+                "uid": 44,
+                "virtual": false,
+                "name": "Liverpool",
+                "mediumname": "Liverpool FC",
+                "abbr": "LFC",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              }
+            },
+            "tobeannounced": false,
+            "postponed": false,
+            "stadiumid": 70019,
+            "walkover": false,
+            "retired": false,
+            "comment": "0:1 (22.) R.Araujo, 0:2 (24.) B.Barcola, 0:3 (37.) B.Barcola, 0:4 (51.) J.Frimpong, 1:4 (63.) R.Ljubicic, 1:5 (66.) B.Barcola, 1:6 (72.) L.Koumas, 2:6 (74.) F.Flecker, 3:6 (77.) F.Flecker",
+            "inlivescore": true,
+            "disqualified": false,
+            "neutralground": false,
+            "canceled": false,
+            "bestof": null,
+            "periods": {
+              "ft": {
+                "home": 3,
+                "away": 6
+              },
+              "p1": {
+                "home": 0,
+                "away": 3
+              }
+            },
+            "result": {
+              "home": 3,
+              "away": 6,
+              "period": "nt",
+              "winner": "away"
+            },
+            "status": null,
+            "time": {
+              "_doc": "time",
+              "time": "16:45",
+              "date": "14/10/26",
+              "tz": "UTC",
+              "tzoffset": 0,
+              "uts": 1791996300
+            },
+            "numberofperiods": 2,
+            "_seasonid": 140786,
+            "roundname": {
+              "_doc": "tableround",
+              "_id": 2,
+              "name": 2
+            },
+            "corners": {
+              "home": 3,
+              "away": 11
+            },
+            "firstgoal": "away",
+            "lastgoal": "home"
+          },
+          {
+            "_doc": "match",
+            "_doctype": "generic",
+            "_id": 72345520,
+            "_sid": 1,
+            "_rcid": 17,
+            "_tid": 29,
+            "_utid": 45,
+            "round": 8,
+            "week": 41,
+            "teams": {
+              "home": {
+                "_doc": "team",
+                "_id": 6588,
+                "_sid": 1,
+                "uid": 2058,
+                "virtual": false,
+                "name": "LASK",
+                "mediumname": "LASK Linz",
+                "abbr": "ASK",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              },
+              "away": {
+                "_doc": "team",
+                "_id": 6592,
+                "_sid": 1,
+                "uid": 2055,
+                "virtual": false,
+                "name": "SK Rapid",
+                "mediumname": "SK Rapid",
+                "abbr": "SCR",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              }
+            },
+            "tobeannounced": false,
+            "postponed": false,
+            "stadiumid": 70019,
+            "walkover": false,
+            "retired": false,
+            "comment": "0:1 (58.) E.Kara, 0:2 (82.) C.Mbuyi",
+            "inlivescore": true,
+            "disqualified": false,
+            "neutralground": false,
+            "canceled": false,
+            "bestof": null,
+            "periods": {
+              "ft": {
+                "home": 0,
+                "away": 2
+              },
+              "p1": {
+                "home": 0,
+                "away": 0
+              }
+            },
+            "result": {
+              "home": 0,
+              "away": 2,
+              "period": "nt",
+              "winner": "away"
+            },
+            "status": null,
+            "time": {
+              "_doc": "time",
+              "time": "15:00",
+              "date": "11/10/26",
+              "tz": "UTC",
+              "tzoffset": 0,
+              "uts": 1791730800
+            },
+            "numberofperiods": 2,
+            "_seasonid": 140798,
+            "roundname": {
+              "_doc": "tableround",
+              "_id": 8,
+              "name": 8
+            },
+            "corners": {
+              "home": 6,
+              "away": 3
+            },
+            "firstgoal": "away",
+            "lastgoal": "away"
+          },
+          {
+            "_doc": "match",
+            "_doctype": "generic",
+            "_id": 72345512,
+            "_sid": 1,
+            "_rcid": 17,
+            "_tid": 29,
+            "_utid": 45,
+            "round": 7,
+            "week": 38,
+            "teams": {
+              "home": {
+                "_doc": "team",
+                "_id": 11008555,
+                "_sid": 1,
+                "uid": 2075,
+                "virtual": false,
+                "name": "Hartberg",
+                "mediumname": "TSV Hartberg",
+                "abbr": "HTB",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              },
+              "away": {
+                "_doc": "team",
+                "_id": 6588,
+                "_sid": 1,
+                "uid": 2058,
+                "virtual": false,
+                "name": "LASK",
+                "mediumname": "LASK Linz",
+                "abbr": "ASK",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              }
+            },
+            "tobeannounced": false,
+            "postponed": false,
+            "stadiumid": 787,
+            "walkover": false,
+            "retired": false,
+            "comment": "0:1 (7.) S.Horvath, 0:2 (30.) C.Lang, 1:2 (46.) A.Radulovic, 1:3 (58.) A.Andrade, 2:3 (72.) A.Radulovic, 3:3 (77.) J.Drew",
+            "inlivescore": true,
+            "disqualified": false,
+            "neutralground": false,
+            "canceled": false,
+            "bestof": null,
+            "periods": {
+              "ft": {
+                "home": 3,
+                "away": 3
+              },
+              "p1": {
+                "home": 0,
+                "away": 2
+              }
+            },
+            "result": {
+              "home": 3,
+              "away": 3,
+              "period": "nt",
+              "winner": null
+            },
+            "status": null,
+            "time": {
+              "_doc": "time",
+              "time": "12:30",
+              "date": "20/09/26",
+              "tz": "UTC",
+              "tzoffset": 0,
+              "uts": 1789907400
+            },
+            "numberofperiods": 2,
+            "_seasonid": 140798,
+            "roundname": {
+              "_doc": "tableround",
+              "_id": 7,
+              "name": 7
+            },
+            "corners": {
+              "away": 9,
+              "home": 1
+            },
+            "firstgoal": "away",
+            "lastgoal": "home"
+          },
+          {
+            "_doc": "match",
+            "_doctype": "generic",
+            "_id": 72345496,
+            "_sid": 1,
+            "_rcid": 17,
+            "_tid": 29,
+            "_utid": 45,
+            "round": 6,
+            "week": 37,
+            "teams": {
+              "home": {
+                "_doc": "team",
+                "_id": 6589,
+                "_sid": 1,
+                "uid": 2051,
+                "virtual": false,
+                "name": "Sturm Graz",
+                "mediumname": "SK Sturm Graz",
+                "abbr": "STU",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              },
+              "away": {
+                "_doc": "team",
+                "_id": 6588,
+                "_sid": 1,
+                "uid": 2058,
+                "virtual": false,
+                "name": "LASK",
+                "mediumname": "LASK Linz",
+                "abbr": "ASK",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              }
+            },
+            "tobeannounced": false,
+            "postponed": false,
+            "stadiumid": 808,
+            "walkover": false,
+            "retired": false,
+            "comment": "1:0 (34.) G.Mamageishvili, 1:1 (45.) K.Danek, 2:1 (59.) O.Diakite",
+            "inlivescore": true,
+            "disqualified": false,
+            "neutralground": false,
+            "canceled": false,
+            "bestof": null,
+            "periods": {
+              "ft": {
+                "home": 2,
+                "away": 1
+              },
+              "p1": {
+                "home": 1,
+                "away": 1
+              }
+            },
+            "result": {
+              "home": 2,
+              "away": 1,
+              "period": "nt",
+              "winner": "home"
+            },
+            "status": null,
+            "time": {
+              "_doc": "time",
+              "time": "15:00",
+              "date": "13/09/26",
+              "tz": "UTC",
+              "tzoffset": 0,
+              "uts": 1789311600
+            },
+            "numberofperiods": 2,
+            "_seasonid": 140798,
+            "roundname": {
+              "_doc": "tableround",
+              "_id": 6,
+              "name": 6
+            },
+            "corners": {
+              "away": 6,
+              "home": 3
+            },
+            "firstgoal": "home",
+            "lastgoal": "home"
+          },
+          {
+            "_doc": "match",
+            "_doctype": "generic",
+            "_id": 74165868,
+            "_sid": 1,
+            "_rcid": 393,
+            "_tid": 151665,
+            "_utid": 7,
+            "round": 1,
+            "week": 37,
+            "teams": {
+              "home": {
+                "_doc": "team",
+                "_id": 122668,
+                "_sid": 1,
+                "uid": 3250,
+                "virtual": false,
+                "name": "AEK Athens",
+                "mediumname": "AEK Athens",
+                "abbr": "AEK",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              },
+              "away": {
+                "_doc": "team",
+                "_id": 12339638,
+                "_sid": 1,
+                "uid": 2058,
+                "virtual": false,
+                "name": "LASK",
+                "mediumname": "LASK Linz",
+                "abbr": "ASK",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              }
+            },
+            "tobeannounced": false,
+            "postponed": false,
+            "stadiumid": 60282,
+            "walkover": false,
+            "retired": false,
+            "comment": "1:0 (21.) R.Marin",
+            "inlivescore": true,
+            "disqualified": false,
+            "neutralground": false,
+            "canceled": false,
+            "bestof": null,
+            "periods": {
+              "ft": {
+                "home": 1,
+                "away": 0
+              },
+              "p1": {
+                "home": 1,
+                "away": 0
+              }
+            },
+            "result": {
+              "home": 1,
+              "away": 0,
+              "period": "nt",
+              "winner": "home"
+            },
+            "status": null,
+            "time": {
+              "_doc": "time",
+              "time": "16:45",
+              "date": "08/09/26",
+              "tz": "UTC",
+              "tzoffset": 0,
+              "uts": 1788885900
+            },
+            "numberofperiods": 2,
+            "_seasonid": 140786,
+            "roundname": {
+              "_doc": "tableround",
+              "_id": 1,
+              "name": 1
+            },
+            "corners": {
+              "home": 7,
+              "away": 3
+            },
+            "firstgoal": "home",
+            "lastgoal": "home"
+          },
+          {
+            "_doc": "match",
+            "_doctype": "generic",
+            "_id": 73287500,
+            "_sid": 1,
+            "_rcid": 17,
+            "_tid": 69,
+            "_utid": 445,
+            "round": 8,
+            "week": 36,
+            "teams": {
+              "home": {
+                "_doc": "team",
+                "_id": 11114071,
+                "_sid": 1,
+                "uid": 73883,
+                "virtual": false,
+                "name": "Deutschlandsberg",
+                "mediumname": "Deutschlandsberger SC",
+                "abbr": "DSC",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              },
+              "away": {
+                "_doc": "team",
+                "_id": 6918,
+                "_sid": 1,
+                "uid": 2058,
+                "virtual": false,
+                "name": "LASK",
+                "mediumname": "LASK Linz",
+                "abbr": "ASK",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              }
+            },
+            "tobeannounced": false,
+            "postponed": false,
+            "stadiumid": 19394,
+            "walkover": false,
+            "retired": false,
+            "comment": "0:1 (10.) C.Lang, 0:2 (15.) N.Kane, 0:3 (22.) K.Danek, 0:4 (36.) F.Flecker, 1:4 (48.) C.Degen, 1:5 (55.) N.Kane, 1:6 (67.) S.Horvath",
+            "inlivescore": true,
+            "disqualified": false,
+            "neutralground": false,
+            "canceled": false,
+            "bestof": null,
+            "periods": {
+              "ft": {
+                "home": 1,
+                "away": 6
+              },
+              "p1": {
+                "home": 0,
+                "away": 4
+              }
+            },
+            "result": {
+              "home": 1,
+              "away": 6,
+              "period": "nt",
+              "winner": "away"
+            },
+            "status": null,
+            "time": {
+              "_doc": "time",
+              "time": "13:30",
+              "date": "05/09/26",
+              "tz": "UTC",
+              "tzoffset": 0,
+              "uts": 1788615000
+            },
+            "numberofperiods": 2,
+            "_seasonid": 140802,
+            "roundname": {
+              "_doc": "cupround",
+              "_id": 8,
+              "displaynumber": null,
+              "name": "Round 2",
+              "shortname": "R2",
+              "cuproundnumber": null,
+              "statisticssortorder": 18
+            },
+            "cuproundmatchnumber": "1",
+            "cuproundnumberofmatches": "1",
+            "corners": {
+              "home": 2,
+              "away": 6
+            },
+            "firstgoal": "away",
+            "lastgoal": "away"
+          },
+          {
+            "_doc": "match",
+            "_doctype": "generic",
+            "_id": 73456300,
+            "_sid": 1,
+            "_rcid": 17,
+            "_tid": 29,
+            "_utid": 45,
+            "round": 4,
+            "week": 36,
+            "teams": {
+              "home": {
+                "_doc": "team",
+                "_id": 6245019,
+                "_sid": 1,
+                "uid": 2076,
+                "virtual": false,
+                "name": "Wolfsberg",
+                "mediumname": "Wolfsberger AC",
+                "abbr": "WAC",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              },
+              "away": {
+                "_doc": "team",
+                "_id": 6588,
+                "_sid": 1,
+                "uid": 2058,
+                "virtual": false,
+                "name": "LASK",
+                "mediumname": "LASK Linz",
+                "abbr": "ASK",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              }
+            },
+            "tobeannounced": false,
+            "postponed": false,
+            "stadiumid": 2342,
+            "walkover": false,
+            "retired": false,
+            "comment": "1:0 (34.) F.Wohlmuth, 1:1 (54.) X.Mbuyamba, 1:2 (68.) M.Bogarde, 1:3 (84.) A.Schoepf",
+            "inlivescore": true,
+            "disqualified": false,
+            "neutralground": false,
+            "canceled": false,
+            "bestof": null,
+            "periods": {
+              "ft": {
+                "home": 1,
+                "away": 3
+              },
+              "p1": {
+                "home": 1,
+                "away": 0
+              }
+            },
+            "result": {
+              "home": 1,
+              "away": 3,
+              "period": "nt",
+              "winner": "away"
+            },
+            "status": null,
+            "time": {
+              "_doc": "time",
+              "time": "17:30",
+              "date": "01/09/26",
+              "tz": "UTC",
+              "tzoffset": 0,
+              "uts": 1788283800
+            },
+            "numberofperiods": 2,
+            "_seasonid": 140798,
+            "roundname": {
+              "_doc": "tableround",
+              "_id": 4,
+              "name": 4
+            },
+            "corners": {
+              "away": 14,
+              "home": 1
+            },
+            "firstgoal": "home",
+            "lastgoal": "away"
+          },
+          {
+            "_doc": "match",
+            "_doctype": "generic",
+            "_id": 72345488,
+            "_sid": 1,
+            "_rcid": 17,
+            "_tid": 29,
+            "_utid": 45,
+            "round": 5,
+            "week": 35,
+            "teams": {
+              "home": {
+                "_doc": "team",
+                "_id": 6588,
+                "_sid": 1,
+                "uid": 2058,
+                "virtual": false,
+                "name": "LASK",
+                "mediumname": "LASK Linz",
+                "abbr": "ASK",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              },
+              "away": {
+                "_doc": "team",
+                "_id": 804429,
+                "_sid": 1,
+                "uid": 4856,
+                "virtual": false,
+                "name": "SCR Altach",
+                "mediumname": "SCR Altach",
+                "abbr": "ALT",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              }
+            },
+            "tobeannounced": false,
+            "postponed": false,
+            "stadiumid": 70019,
+            "walkover": false,
+            "retired": false,
+            "comment": "1:0 (3.) C.Lang, 2:0 (19.) C.Lang, 3:0 (89.) F.Flecker",
+            "inlivescore": true,
+            "disqualified": false,
+            "neutralground": false,
+            "canceled": false,
+            "bestof": null,
+            "periods": {
+              "ft": {
+                "home": 3,
+                "away": 0
+              },
+              "p1": {
+                "home": 2,
+                "away": 0
+              }
+            },
+            "result": {
+              "home": 3,
+              "away": 0,
+              "period": "nt",
+              "winner": "home"
+            },
+            "status": null,
+            "time": {
+              "_doc": "time",
+              "time": "17:30",
+              "date": "29/08/26",
+              "tz": "UTC",
+              "tzoffset": 0,
+              "uts": 1788024600
+            },
+            "numberofperiods": 2,
+            "_seasonid": 140798,
+            "roundname": {
+              "_doc": "tableround",
+              "_id": 5,
+              "name": 5
+            },
+            "corners": {
+              "home": 4,
+              "away": 0
+            },
+            "firstgoal": "home",
+            "lastgoal": "home"
+          },
+          {
+            "_doc": "match",
+            "_doctype": "generic",
+            "_id": 73394724,
+            "_sid": 1,
+            "_rcid": 393,
+            "_tid": 133211,
+            "_utid": 7,
+            "round": 636,
+            "week": 35,
+            "teams": {
+              "home": {
+                "_doc": "team",
+                "_id": 12339638,
+                "_sid": 1,
+                "uid": 2058,
+                "virtual": false,
+                "name": "LASK",
+                "mediumname": "LASK Linz",
+                "abbr": "ASK",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              },
+              "away": {
+                "_doc": "team",
+                "_id": 46089,
+                "_sid": 1,
+                "uid": 2352,
+                "virtual": false,
+                "name": "Celtic",
+                "mediumname": "Celtic Glasgow",
+                "abbr": "CEL",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              }
+            },
+            "tobeannounced": false,
+            "postponed": false,
+            "stadiumid": 70019,
+            "walkover": false,
+            "retired": false,
+            "comment": "0:1 (21.) C.McGregor, 1:1 (32.) M.Usor, 2:1 (48.) R.Ljubicic, 3:1 (58.) S.Adeniran, 4:1 (90.) F.Flecker, 5:1 (109.) S.Adeniran",
+            "inlivescore": true,
+            "disqualified": false,
+            "neutralground": false,
+            "canceled": false,
+            "bestof": null,
+            "periods": {
+              "ft": {
+                "home": 4,
+                "away": 1
+              },
+              "ot": {
+                "home": 5,
+                "away": 1
+              },
+              "p1": {
+                "home": 1,
+                "away": 1
+              }
+            },
+            "result": {
+              "home": 5,
+              "away": 1,
+              "period": "ot",
+              "winner": "home"
+            },
+            "status": null,
+            "time": {
+              "_doc": "time",
+              "time": "19:00",
+              "date": "25/08/26",
+              "tz": "UTC",
+              "tzoffset": 0,
+              "uts": 1787684400
+            },
+            "numberofperiods": 2,
+            "_seasonid": 140786,
+            "roundname": {
+              "_doc": "cupround",
+              "_id": 636,
+              "displaynumber": null,
+              "name": "Playoff Round",
+              "shortname": "",
+              "cuproundnumber": null,
+              "statisticssortorder": 0
+            },
+            "cuproundmatchnumber": "2",
+            "cuproundnumberofmatches": "2",
+            "corners": {
+              "away": 5,
+              "home": 10
+            },
+            "firstgoal": "away",
+            "lastgoal": "home"
+          },
+          {
+            "_doc": "match",
+            "_doctype": "generic",
+            "_id": 73394630,
+            "_sid": 1,
+            "_rcid": 393,
+            "_tid": 133211,
+            "_utid": 7,
+            "round": 636,
+            "week": 34,
+            "teams": {
+              "home": {
+                "_doc": "team",
+                "_id": 46089,
+                "_sid": 1,
+                "uid": 2352,
+                "virtual": false,
+                "name": "Celtic",
+                "mediumname": "Celtic Glasgow",
+                "abbr": "CEL",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              },
+              "away": {
+                "_doc": "team",
+                "_id": 12339638,
+                "_sid": 1,
+                "uid": 2058,
+                "virtual": false,
+                "name": "LASK",
+                "mediumname": "LASK Linz",
+                "abbr": "ASK",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              }
+            },
+            "tobeannounced": false,
+            "postponed": false,
+            "stadiumid": 916,
+            "walkover": false,
+            "retired": false,
+            "comment": "1:0 (26.) B.Nygren, 2:0 (38.) C.Duran, 3:0 (67.) C.Duran",
+            "inlivescore": true,
+            "disqualified": false,
+            "neutralground": false,
+            "canceled": false,
+            "bestof": null,
+            "periods": {
+              "ft": {
+                "home": 3,
+                "away": 0
+              },
+              "p1": {
+                "home": 2,
+                "away": 0
+              }
+            },
+            "result": {
+              "home": 3,
+              "away": 0,
+              "period": "nt",
+              "winner": "home"
+            },
+            "status": null,
+            "time": {
+              "_doc": "time",
+              "time": "19:00",
+              "date": "19/08/26",
+              "tz": "UTC",
+              "tzoffset": 0,
+              "uts": 1787166000
+            },
+            "numberofperiods": 2,
+            "_seasonid": 140786,
+            "roundname": {
+              "_doc": "cupround",
+              "_id": 636,
+              "displaynumber": null,
+              "name": "Playoff Round",
+              "shortname": "",
+              "cuproundnumber": null,
+              "statisticssortorder": 0
+            },
+            "cuproundmatchnumber": "1",
+            "cuproundnumberofmatches": "2",
+            "corners": {
+              "home": 8,
+              "away": 3
+            },
+            "firstgoal": "home",
+            "lastgoal": "home"
+          },
+          {
+            "_doc": "match",
+            "_doctype": "generic",
+            "_id": 72345460,
+            "_sid": 1,
+            "_rcid": 17,
+            "_tid": 29,
+            "_utid": 45,
+            "round": 3,
+            "week": 33,
+            "teams": {
+              "home": {
+                "_doc": "team",
+                "_id": 6588,
+                "_sid": 1,
+                "uid": 2058,
+                "virtual": false,
+                "name": "LASK",
+                "mediumname": "LASK Linz",
+                "abbr": "ASK",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              },
+              "away": {
+                "_doc": "team",
+                "_id": 6591,
+                "_sid": 1,
+                "uid": 2049,
+                "virtual": false,
+                "name": "Ried",
+                "mediumname": "SV Ried",
+                "abbr": "SVR",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              }
+            },
+            "tobeannounced": false,
+            "postponed": false,
+            "stadiumid": 70019,
+            "walkover": false,
+            "retired": false,
+            "comment": "0:1 (9.) N.Sissoko, 1:1 (10.) S.Adeniran, 2:1 (18.) M.Usor, 3:1 (27.) S.Adeniran, 4:1 (58.) C.Lang",
+            "inlivescore": true,
+            "disqualified": false,
+            "neutralground": false,
+            "canceled": false,
+            "bestof": null,
+            "periods": {
+              "ft": {
+                "home": 4,
+                "away": 1
+              },
+              "p1": {
+                "home": 3,
+                "away": 1
+              }
+            },
+            "result": {
+              "home": 4,
+              "away": 1,
+              "period": "nt",
+              "winner": "home"
+            },
+            "status": null,
+            "time": {
+              "_doc": "time",
+              "time": "17:30",
+              "date": "14/08/26",
+              "tz": "UTC",
+              "tzoffset": 0,
+              "uts": 1786728600
+            },
+            "numberofperiods": 2,
+            "_seasonid": 140798,
+            "roundname": {
+              "_doc": "tableround",
+              "_id": 3,
+              "name": 3
+            },
+            "corners": {
+              "home": 6,
+              "away": 0
+            },
+            "firstgoal": "away",
+            "lastgoal": "home"
+          },
+          {
+            "_doc": "match",
+            "_doctype": "generic",
+            "_id": 72345458,
+            "_sid": 1,
+            "_rcid": 17,
+            "_tid": 29,
+            "_utid": 45,
+            "round": 2,
+            "week": 32,
+            "teams": {
+              "home": {
+                "_doc": "team",
+                "_id": 6597,
+                "_sid": 1,
+                "uid": 2203,
+                "virtual": false,
+                "name": "Austria",
+                "mediumname": "FK Austria Wien",
+                "abbr": "FAK",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              },
+              "away": {
+                "_doc": "team",
+                "_id": 6588,
+                "_sid": 1,
+                "uid": 2058,
+                "virtual": false,
+                "name": "LASK",
+                "mediumname": "LASK Linz",
+                "abbr": "ASK",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              }
+            },
+            "tobeannounced": false,
+            "postponed": false,
+            "stadiumid": 637,
+            "walkover": false,
+            "retired": false,
+            "comment": "0:1 (54.) A.Andrade, 0:2 (83.) M.Usor",
+            "inlivescore": true,
+            "disqualified": false,
+            "neutralground": false,
+            "canceled": false,
+            "bestof": null,
+            "periods": {
+              "ft": {
+                "home": 0,
+                "away": 2
+              },
+              "p1": {
+                "home": 0,
+                "away": 0
+              }
+            },
+            "result": {
+              "home": 0,
+              "away": 2,
+              "period": "nt",
+              "winner": "away"
+            },
+            "status": null,
+            "time": {
+              "_doc": "time",
+              "time": "17:00",
+              "date": "09/08/26",
+              "tz": "UTC",
+              "tzoffset": 0,
+              "uts": 1786294800
+            },
+            "numberofperiods": 2,
+            "_seasonid": 140798,
+            "roundname": {
+              "_doc": "tableround",
+              "_id": 2,
+              "name": 2
+            },
+            "corners": {
+              "away": 11,
+              "home": 1
+            },
+            "firstgoal": "away",
+            "lastgoal": "away"
+          },
+          {
+            "_doc": "match",
+            "_doctype": "generic",
+            "_id": 72345436,
+            "_sid": 1,
+            "_rcid": 17,
+            "_tid": 29,
+            "_utid": 45,
+            "round": 1,
+            "week": 31,
+            "teams": {
+              "home": {
+                "_doc": "team",
+                "_id": 6588,
+                "_sid": 1,
+                "uid": 2058,
+                "virtual": false,
+                "name": "LASK",
+                "mediumname": "LASK Linz",
+                "abbr": "ASK",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              },
+              "away": {
+                "_doc": "team",
+                "_id": 6596,
+                "_sid": 1,
+                "uid": 2052,
+                "virtual": false,
+                "name": "GAK",
+                "mediumname": "Grazer AK 1902",
+                "abbr": "GAK",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              }
+            },
+            "tobeannounced": false,
+            "postponed": false,
+            "stadiumid": 70019,
+            "walkover": false,
+            "retired": false,
+            "comment": "1:0 (20.) S.Adeniran, 2:0 (29.) S.Adeniran (pen), 3:0 (79.) C.Lang",
+            "inlivescore": true,
+            "disqualified": false,
+            "neutralground": false,
+            "canceled": false,
+            "bestof": null,
+            "periods": {
+              "ft": {
+                "home": 3,
+                "away": 0
+              },
+              "p1": {
+                "home": 2,
+                "away": 0
+              }
+            },
+            "result": {
+              "home": 3,
+              "away": 0,
+              "period": "nt",
+              "winner": "home"
+            },
+            "status": null,
+            "time": {
+              "_doc": "time",
+              "time": "17:30",
+              "date": "31/07/26",
+              "tz": "UTC",
+              "tzoffset": 0,
+              "uts": 1785519000
+            },
+            "numberofperiods": 2,
+            "_seasonid": 140798,
+            "roundname": {
+              "_doc": "tableround",
+              "_id": 1,
+              "name": 1
+            },
+            "corners": {
+              "home": 6,
+              "away": 2
+            },
+            "firstgoal": "home",
+            "lastgoal": "home"
+          },
+          {
+            "_doc": "match",
+            "_doctype": "generic",
+            "_id": 72301188,
+            "_sid": 1,
+            "_rcid": 17,
+            "_tid": 69,
+            "_utid": 445,
+            "round": 7,
+            "week": 30,
+            "teams": {
+              "home": {
+                "_doc": "team",
+                "_id": 860768,
+                "_sid": 1,
+                "uid": 2158,
+                "virtual": false,
+                "name": "Kalsdorf",
+                "mediumname": "SC Kalsdorf",
+                "abbr": "KAL",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              },
+              "away": {
+                "_doc": "team",
+                "_id": 6918,
+                "_sid": 1,
+                "uid": 2058,
+                "virtual": false,
+                "name": "LASK",
+                "mediumname": "LASK Linz",
+                "abbr": "ASK",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              }
+            },
+            "tobeannounced": false,
+            "postponed": false,
+            "stadiumid": 8455,
+            "walkover": false,
+            "retired": false,
+            "comment": null,
+            "inlivescore": true,
+            "disqualified": false,
+            "neutralground": false,
+            "canceled": false,
+            "bestof": null,
+            "periods": {
+              "ft": {
+                "home": 0,
+                "away": 7
+              },
+              "p1": {
+                "home": 0,
+                "away": 1
+              }
+            },
+            "result": {
+              "home": 0,
+              "away": 7,
+              "period": "nt",
+              "winner": "away"
+            },
+            "status": null,
+            "time": {
+              "_doc": "time",
+              "time": "16:00",
+              "date": "25/07/26",
+              "tz": "UTC",
+              "tzoffset": 0,
+              "uts": 1784995200
+            },
+            "numberofperiods": 2,
+            "_seasonid": 140802,
+            "roundname": {
+              "_doc": "cupround",
+              "_id": 7,
+              "displaynumber": null,
+              "name": "Round 1",
+              "shortname": "R1",
+              "cuproundnumber": null,
+              "statisticssortorder": 19
+            },
+            "cuproundmatchnumber": "1",
+            "cuproundnumberofmatches": "1",
+            "corners": {
+              "away": 8,
+              "home": 1
+            },
+            "firstgoal": "away",
+            "lastgoal": "away"
+          },
+          {
+            "_doc": "match",
+            "_doctype": "generic",
+            "_id": 72047384,
+            "_sid": 1,
+            "_rcid": 393,
+            "_tid": 86,
+            "_utid": 853,
+            "round": null,
+            "week": 29,
+            "teams": {
+              "home": {
+                "_doc": "team",
+                "_id": 231134,
+                "_sid": 1,
+                "uid": 2058,
+                "virtual": false,
+                "name": "LASK",
+                "mediumname": "LASK Linz",
+                "abbr": "ASK",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              },
+              "away": {
+                "_doc": "team",
+                "_id": 309742,
+                "_sid": 1,
+                "uid": 2588,
+                "virtual": false,
+                "name": "Dusseldorf",
+                "mediumname": "Fortuna Dusseldorf",
+                "abbr": "F95",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              }
+            },
+            "tobeannounced": false,
+            "postponed": false,
+            "stadiumid": 0,
+            "walkover": false,
+            "retired": false,
+            "comment": null,
+            "inlivescore": true,
+            "disqualified": false,
+            "neutralground": true,
+            "canceled": false,
+            "bestof": null,
+            "periods": {
+              "ft": {
+                "home": 2,
+                "away": 0
+              },
+              "p1": {
+                "home": 0,
+                "away": 0
+              }
+            },
+            "result": {
+              "home": 2,
+              "away": 0,
+              "period": "nt",
+              "winner": "home"
+            },
+            "status": null,
+            "time": {
+              "_doc": "time",
+              "time": "13:30",
+              "date": "18/07/26",
+              "tz": "UTC",
+              "tzoffset": 0,
+              "uts": 1784381400
+            },
+            "numberofperiods": 2,
+            "_seasonid": 137512,
+            "corners": {
+              "home": 6,
+              "away": 2
+            },
+            "firstgoal": "home",
+            "lastgoal": "home"
+          },
+          {
+            "_doc": "match",
+            "_doctype": "generic",
+            "_id": 72047308,
+            "_sid": 1,
+            "_rcid": 393,
+            "_tid": 86,
+            "_utid": 853,
+            "round": null,
+            "week": 29,
+            "teams": {
+              "home": {
+                "_doc": "team",
+                "_id": 231134,
+                "_sid": 1,
+                "uid": 2058,
+                "virtual": false,
+                "name": "LASK",
+                "mediumname": "LASK Linz",
+                "abbr": "ASK",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              },
+              "away": {
+                "_doc": "team",
+                "_id": 117597,
+                "_sid": 1,
+                "uid": 3052,
+                "virtual": false,
+                "name": "Fenerbahce",
+                "mediumname": "Fenerbahce Istanbul",
+                "abbr": "FEN",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              }
+            },
+            "tobeannounced": false,
+            "postponed": false,
+            "stadiumid": 0,
+            "walkover": false,
+            "retired": false,
+            "comment": null,
+            "inlivescore": true,
+            "disqualified": false,
+            "neutralground": true,
+            "canceled": false,
+            "bestof": null,
+            "periods": {
+              "ft": {
+                "home": 1,
+                "away": 2
+              },
+              "p1": {
+                "home": 0,
+                "away": 1
+              }
+            },
+            "result": {
+              "home": 1,
+              "away": 2,
+              "period": "nt",
+              "winner": "away"
+            },
+            "status": null,
+            "time": {
+              "_doc": "time",
+              "time": "17:30",
+              "date": "14/07/26",
+              "tz": "UTC",
+              "tzoffset": 0,
+              "uts": 1784050200
+            },
+            "numberofperiods": 2,
+            "_seasonid": 137512,
+            "corners": {
+              "away": 8,
+              "home": 0
+            },
+            "firstgoal": "away",
+            "lastgoal": "home"
+          },
+          {
+            "_doc": "match",
+            "_doctype": "generic",
+            "_id": 72047306,
+            "_sid": 1,
+            "_rcid": 393,
+            "_tid": 86,
+            "_utid": 853,
+            "round": null,
+            "week": 28,
+            "teams": {
+              "home": {
+                "_doc": "team",
+                "_id": 231134,
+                "_sid": 1,
+                "uid": 2058,
+                "virtual": false,
+                "name": "LASK",
+                "mediumname": "LASK Linz",
+                "abbr": "ASK",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              },
+              "away": {
+                "_doc": "team",
+                "_id": 562310,
+                "_sid": 1,
+                "uid": 5880,
+                "virtual": false,
+                "name": "Ingolstadt",
+                "mediumname": "FC Ingolstadt 04",
+                "abbr": "FCI",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              }
+            },
+            "tobeannounced": false,
+            "postponed": false,
+            "stadiumid": 70019,
+            "walkover": false,
+            "retired": false,
+            "comment": null,
+            "inlivescore": true,
+            "disqualified": false,
+            "neutralground": false,
+            "canceled": false,
+            "bestof": null,
+            "periods": {
+              "ft": {
+                "home": 0,
+                "away": 2
+              },
+              "p1": {
+                "home": 0,
+                "away": 1
+              }
+            },
+            "result": {
+              "home": 0,
+              "away": 2,
+              "period": "nt",
+              "winner": "away"
+            },
+            "status": null,
+            "time": {
+              "_doc": "time",
+              "time": "12:30",
+              "date": "09/07/26",
+              "tz": "UTC",
+              "tzoffset": 0,
+              "uts": 1783600200
+            },
+            "numberofperiods": 2,
+            "_seasonid": 137512,
+            "firstgoal": "away",
+            "lastgoal": "away"
+          },
+          {
+            "_doc": "match",
+            "_doctype": "generic",
+            "_id": 72291460,
+            "_sid": 1,
+            "_rcid": 393,
+            "_tid": 86,
+            "_utid": 853,
+            "round": null,
+            "week": 27,
+            "teams": {
+              "home": {
+                "_doc": "team",
+                "_id": 231134,
+                "_sid": 1,
+                "uid": 2058,
+                "virtual": false,
+                "name": "LASK",
+                "mediumname": "LASK Linz",
+                "abbr": "ASK",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              },
+              "away": {
+                "_doc": "team",
+                "_id": 306674,
+                "_sid": 1,
+                "uid": 3305,
+                "virtual": false,
+                "name": "Dynamo Kyiv",
+                "mediumname": "FC Dynamo Kyiv",
+                "abbr": "DYK",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              }
+            },
+            "tobeannounced": false,
+            "postponed": false,
+            "stadiumid": 0,
+            "walkover": false,
+            "retired": false,
+            "comment": null,
+            "inlivescore": true,
+            "disqualified": false,
+            "neutralground": true,
+            "canceled": false,
+            "bestof": null,
+            "periods": {
+              "ft": {
+                "home": 0,
+                "away": 2
+              },
+              "p1": {
+                "home": 0,
+                "away": 1
+              }
+            },
+            "result": {
+              "home": 0,
+              "away": 2,
+              "period": "nt",
+              "winner": "away"
+            },
+            "status": null,
+            "time": {
+              "_doc": "time",
+              "time": "15:00",
+              "date": "03/07/26",
+              "tz": "UTC",
+              "tzoffset": 0,
+              "uts": 1783090800
+            },
+            "numberofperiods": 2,
+            "_seasonid": 137512,
+            "firstgoal": "away",
+            "lastgoal": "away"
+          },
+          {
+            "_doc": "match",
+            "_doctype": "generic",
+            "_id": 71928660,
+            "_sid": 1,
+            "_rcid": 393,
+            "_tid": 86,
+            "_utid": 853,
+            "round": null,
+            "week": 26,
+            "teams": {
+              "home": {
+                "_doc": "team",
+                "_id": 7635896,
+                "_sid": 1,
+                "uid": 459941,
+                "virtual": false,
+                "name": "Hertha Wels",
+                "mediumname": "FC Hertha Wels",
+                "abbr": "HER",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              },
+              "away": {
+                "_doc": "team",
+                "_id": 231134,
+                "_sid": 1,
+                "uid": 2058,
+                "virtual": false,
+                "name": "LASK",
+                "mediumname": "LASK Linz",
+                "abbr": "ASK",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              }
+            },
+            "tobeannounced": false,
+            "postponed": false,
+            "stadiumid": 40062,
+            "walkover": false,
+            "retired": false,
+            "comment": null,
+            "inlivescore": true,
+            "disqualified": false,
+            "neutralground": false,
+            "canceled": false,
+            "bestof": null,
+            "periods": {
+              "ft": {
+                "home": 0,
+                "away": 5
+              },
+              "p1": {
+                "home": 0,
+                "away": 2
+              }
+            },
+            "result": {
+              "home": 0,
+              "away": 5,
+              "period": "nt",
+              "winner": "away"
+            },
+            "status": null,
+            "time": {
+              "_doc": "time",
+              "time": "16:30",
+              "date": "27/06/26",
+              "tz": "UTC",
+              "tzoffset": 0,
+              "uts": 1782577800
+            },
+            "numberofperiods": 2,
+            "_seasonid": 137512,
+            "corners": {
+              "away": 9,
+              "home": 1
+            },
+            "firstgoal": "away",
+            "lastgoal": "away"
+          },
+          {
+            "_doc": "match",
+            "_doctype": "generic",
+            "_id": 72047288,
+            "_sid": 1,
+            "_rcid": 393,
+            "_tid": 86,
+            "_utid": 853,
+            "round": null,
+            "week": 26,
+            "teams": {
+              "home": {
+                "_doc": "team",
+                "_id": 981824,
+                "_sid": 1,
+                "uid": 6282,
+                "virtual": false,
+                "name": "Bad Schallerbach",
+                "mediumname": "Sedda Bad Schallerbach",
+                "abbr": "BAS",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": false
+              },
+              "away": {
+                "_doc": "team",
+                "_id": 231134,
+                "_sid": 1,
+                "uid": 2058,
+                "virtual": false,
+                "name": "LASK",
+                "mediumname": "LASK Linz",
+                "abbr": "ASK",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              }
+            },
+            "tobeannounced": false,
+            "postponed": false,
+            "stadiumid": 0,
+            "walkover": false,
+            "retired": false,
+            "comment": null,
+            "inlivescore": true,
+            "disqualified": false,
+            "neutralground": true,
+            "canceled": false,
+            "bestof": null,
+            "periods": {
+              "ft": {
+                "home": 0,
+                "away": 6
+              },
+              "p1": {
+                "home": 0,
+                "away": 4
+              }
+            },
+            "result": {
+              "home": 0,
+              "away": 6,
+              "period": "nt",
+              "winner": "away"
+            },
+            "status": null,
+            "time": {
+              "_doc": "time",
+              "time": "16:30",
+              "date": "24/06/26",
+              "tz": "UTC",
+              "tzoffset": 0,
+              "uts": 1782318600
+            },
+            "numberofperiods": 2,
+            "_seasonid": 137512,
+            "firstgoal": "away",
+            "lastgoal": "away"
+          },
+          {
+            "_doc": "match",
+            "_doctype": "generic",
+            "_id": 69751550,
+            "_sid": 1,
+            "_rcid": 17,
+            "_tid": 79864,
+            "_utid": 45,
+            "round": null,
+            "week": 20,
+            "teams": {
+              "home": {
+                "_doc": "team",
+                "_id": 6597,
+                "_sid": 1,
+                "uid": 2203,
+                "virtual": false,
+                "name": "Austria",
+                "mediumname": "FK Austria Wien",
+                "abbr": "FAK",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              },
+              "away": {
+                "_doc": "team",
+                "_id": 6588,
+                "_sid": 1,
+                "uid": 2058,
+                "virtual": false,
+                "name": "LASK",
+                "mediumname": "LASK Linz",
+                "abbr": "ASK",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              }
+            },
+            "tobeannounced": false,
+            "postponed": false,
+            "stadiumid": 637,
+            "walkover": false,
+            "retired": false,
+            "comment": "0:1 (38.) X.Mbuyamba, 0:2 (49.) S.Adeniran (pen), 0:3 (76.) M.Bogarde",
+            "inlivescore": true,
+            "disqualified": false,
+            "neutralground": false,
+            "canceled": false,
+            "bestof": null,
+            "periods": {
+              "ft": {
+                "home": 0,
+                "away": 3
+              },
+              "p1": {
+                "home": 0,
+                "away": 1
+              }
+            },
+            "result": {
+              "home": 0,
+              "away": 3,
+              "period": "nt",
+              "winner": "away"
+            },
+            "status": null,
+            "time": {
+              "_doc": "time",
+              "time": "12:30",
+              "date": "17/05/26",
+              "tz": "UTC",
+              "tzoffset": 0,
+              "uts": 1779021000
+            },
+            "numberofperiods": 2,
+            "_seasonid": 131910,
+            "corners": {
+              "home": 8,
+              "away": 5
+            },
+            "firstgoal": "away",
+            "lastgoal": "away"
+          },
+          {
+            "_doc": "match",
+            "_doctype": "generic",
+            "_id": 69751542,
+            "_sid": 1,
+            "_rcid": 17,
+            "_tid": 79864,
+            "_utid": 45,
+            "round": null,
+            "week": 19,
+            "teams": {
+              "home": {
+                "_doc": "team",
+                "_id": 6588,
+                "_sid": 1,
+                "uid": 2058,
+                "virtual": false,
+                "name": "LASK",
+                "mediumname": "LASK Linz",
+                "abbr": "ASK",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              },
+              "away": {
+                "_doc": "team",
+                "_id": 6593,
+                "_sid": 1,
+                "uid": 2046,
+                "virtual": false,
+                "name": "Salzburg",
+                "mediumname": "FC Salzburg",
+                "abbr": "RBS",
+                "nickname": null,
+                "iscountry": false,
+                "haslogo": true
+              }
+            },
+            "tobeannounced": false,
+            "postponed": false,
+            "stadiumid": 70019,
+            "walkover": false,
+            "retired": false,
+            "comment": "1:0 (33.) S.Adeniran, 2:0 (36.) K.Jorgensen, 2:1 (87.) K.Konate",
+            "inlivescore": true,
+            "disqualified": false,
+            "neutralground": false,
+            "canceled": false,
+            "bestof": null,
+            "periods": {
+              "ft": {
+                "home": 2,
+                "away": 1
+              },
+              "p1": {
+                "home": 2,
+                "away": 0
+              }
+            },
+            "result": {
+              "home": 2,
+              "away": 1,
+              "period": "nt",
+              "winner": "home"
+            },
+            "status": null,
+            "time": {
+              "_doc": "time",
+              "time": "15:00",
+              "date": "10/05/26",
+              "tz": "UTC",
+              "tzoffset": 0,
+              "uts": 1778425200
+            },
+            "numberofperiods": 2,
+            "_seasonid": 131910,
+            "corners": {
+              "away": 5,
+              "home": 4
+            },
+            "firstgoal": "home",
+            "lastgoal": "away"
+          }
+        ],
+        "tournaments": {
+          "29": {
+            "_doc": "tournament",
+            "_id": 29,
+            "_sid": 1,
+            "_rcid": 17,
+            "_isk": 1,
+            "_tid": 29,
+            "_utid": 45,
+            "_gender": "men",
+            "name": "Bundesliga",
+            "abbr": "BUN",
+            "livetable": 109050,
+            "friendly": false,
+            "ground": null,
+            "tournamentlevelorder": 1,
+            "tournamentlevelname": "1st level",
+            "outdated": false,
+            "roundbyround": true,
+            "seasontype": "21",
+            "seasontypename": "Regular Season",
+            "seasontypeunique": "68",
+            "groupname": "Bundesliga",
+            "seasonid": 140798,
+            "currentseason": 140798,
+            "year": "26/27"
+          },
+          "69": {
+            "_doc": "tournament",
+            "_id": 69,
+            "_sid": 1,
+            "_rcid": 17,
+            "_isk": 15,
+            "_tid": 69,
+            "_utid": 445,
+            "_gender": "men",
+            "name": "OFB Cup",
+            "abbr": "ÖC",
+            "livetable": false,
+            "friendly": false,
+            "ground": null,
+            "tournamentlevelorder": 10,
+            "tournamentlevelname": "",
+            "outdated": false,
+            "roundbyround": true,
+            "seasontype": "26",
+            "seasontypename": "Playoffs",
+            "seasontypeunique": "23",
+            "seasonid": 140802,
+            "currentseason": 140802,
+            "year": "26/27"
+          },
+          "86": {
+            "_doc": "tournament",
+            "_id": 86,
+            "_sid": 1,
+            "_rcid": 393,
+            "_isk": 1000,
+            "_tid": 86,
+            "_utid": 853,
+            "_gender": "men",
+            "name": "Club Friendly Games",
+            "abbr": "CFG",
+            "livetable": false,
+            "friendly": true,
+            "ground": null,
+            "tournamentlevelorder": 17009,
+            "tournamentlevelname": "",
+            "outdated": false,
+            "roundbyround": false,
+            "seasontype": null,
+            "seasontypename": null,
+            "seasontypeunique": null,
+            "currentseason": 137512,
+            "year": "2026"
+          },
+          "79864": {
+            "_doc": "tournament",
+            "_id": 79864,
+            "_sid": 1,
+            "_rcid": 17,
+            "_isk": 1,
+            "_tid": 79864,
+            "_utid": 45,
+            "_gender": "men",
+            "name": "Bundesliga, Championship Round",
+            "abbr": "BCR",
+            "livetable": false,
+            "friendly": false,
+            "ground": null,
+            "tournamentlevelorder": 1,
+            "tournamentlevelname": "1st level",
+            "outdated": false,
+            "roundbyround": false,
+            "seasontype": null,
+            "seasontypename": null,
+            "seasontypeunique": null,
+            "currentseason": 140798,
+            "year": "26/27"
+          },
+          "133211": {
+            "_doc": "tournament",
+            "_id": 133211,
+            "_sid": 1,
+            "_rcid": 393,
+            "_isk": 10,
+            "_tid": 133211,
+            "_utid": 7,
+            "_gender": "men",
+            "name": "UEFA Champions League, Playoff Round",
+            "abbr": "",
+            "livetable": false,
+            "friendly": false,
+            "ground": null,
+            "tournamentlevelorder": 11000,
+            "tournamentlevelname": "",
+            "outdated": false,
+            "roundbyround": false,
+            "seasontype": "16",
+            "seasontypename": "Qualification",
+            "seasontypeunique": "36",
+            "seasonid": 140786,
+            "currentseason": 140786,
+            "year": "26/27"
+          },
+          "151665": {
+            "_doc": "tournament",
+            "_id": 151665,
+            "_sid": 1,
+            "_rcid": 393,
+            "_isk": 10,
+            "_tid": 151665,
+            "_utid": 7,
+            "_gender": "men",
+            "name": "UEFA Champions League",
+            "abbr": "",
+            "livetable": 108668,
+            "friendly": false,
+            "ground": null,
+            "tournamentlevelorder": 11000,
+            "tournamentlevelname": "",
+            "outdated": false,
+            "roundbyround": true,
+            "seasontype": "21",
+            "seasontypename": "Group stage",
+            "seasontypeunique": "91",
+            "seasonid": 140786,
+            "currentseason": 140786,
+            "year": "26/27"
+          }
+        },
+        "uniquetournaments": {
+          "7": {
+            "_doc": "uniquetournament",
+            "_id": 7,
+            "_utid": 7,
+            "_sid": 1,
+            "_rcid": 393,
+            "name": "UEFA Champions League",
+            "currentseason": 140786,
+            "friendly": false
+          },
+          "45": {
+            "_doc": "uniquetournament",
+            "_id": 45,
+            "_utid": 45,
+            "_sid": 1,
+            "_rcid": 17,
+            "name": "Bundesliga",
+            "currentseason": 140798,
+            "friendly": false
+          },
+          "445": {
+            "_doc": "uniquetournament",
+            "_id": 445,
+            "_utid": 445,
+            "_sid": 1,
+            "_rcid": 17,
+            "name": "OFB Cup",
+            "currentseason": 140802,
+            "friendly": false
+          },
+          "853": {
+            "_doc": "uniquetournament",
+            "_id": 853,
+            "_utid": 853,
+            "_sid": 1,
+            "_rcid": 393,
+            "name": "Club Friendly Games",
+            "currentseason": 137512,
+            "friendly": true
+          }
+        },
+        "realcategories": {
+          "17": {
+            "_doc": "realcategory",
+            "_id": 17,
+            "_sid": 1,
+            "_rcid": 17,
+            "name": "Austria",
+            "cc": {
+              "_doc": "countrycode",
+              "_id": 14,
+              "a2": "at",
+              "name": "Austria",
+              "a3": "AUT",
+              "ioc": "AUT",
+              "continentid": 1,
+              "continent": "Europe",
+              "population": 8772000
+            }
+          },
+          "393": {
+            "_doc": "realcategory",
+            "_id": 393,
+            "_sid": 1,
+            "_rcid": 393,
+            "name": "International Clubs",
+            "cc": null
+          }
+        }
+      }
+    }
+  ]
+}

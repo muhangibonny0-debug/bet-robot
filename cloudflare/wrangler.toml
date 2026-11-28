@@ -1,0 +1,21 @@
+name = "betbrain-coordinator"
+main = "src/worker.js"
+compatibility_date = "2025-10-01"
+
+# Free plan Cloudflare Workers KV namespace for job state, target overrides, and confirmed-used tickets.
+[[kv_namespaces]]
+binding = "BETBRAIN_JOBS"
+id = "24e2cb0ec39946e5b8e3f2f2f1cd9c57"
+
+[vars]
+GITHUB_OWNER = "muhangibonny0-debug"
+GITHUB_REPO = "bet-robot"
+GITHUB_WORKFLOW_FILE = "research.yml"
+GITHUB_REF = "main"
+MAX_CONCURRENT_JOBS = "1"
+JOB_STALE_MINUTES = "20"
+JOB_MAX_MINUTES = "115"
+# Secrets (set via `npx wrangler secret put <NAME>`, NEVER commit):
+#   CLIENT_AUTH_TOKEN      — Bearer token shared by BetBrain phones
+#   RUNNER_CALLBACK_TOKEN  — Secret token used by GitHub Actions runner to post progress/results
+#   GITHUB_DISPATCH_TOKEN  — GitHub PAT with Actions (Read & write) on bet-robot
