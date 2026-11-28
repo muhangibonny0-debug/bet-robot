@@ -34,7 +34,7 @@ async function testLiveGroqMinimal() {
         model,
         messages: [{ role: 'user', content: 'Reply with strictly valid JSON: {"ok":true,"note":"ready"}' }],
         temperature: 0,
-        max_tokens: 40,
+        max_tokens: 300,
         response_format: { type: 'json_object' },
       }),
     });

@@ -51,84 +51,202 @@ function summarizeAvailableMarkets(ev) {
   return out;
 }
 
-function buildAnalystPrompt(ev, statsPacket, availableMarkets) {
+function compactFieldVal(f) {
+  if (!f || typeof f !== 'object') return f ?? null;
+  return f.status === 'retrieved' ? f.value : null;
+}
+
+function compactStatsForPrompt(statsPacket) {
+  const sp = statsPacket || {};
+  const h2h = sp.headToHeadAverages || {};
+  const wp = sp.winProbability || {};
+  const pm = sp.previousMeetings || {};
+  const ls = sp.leagueStandings || {};
+  const fm = sp.lastMatchesForm || {};
+  const ts = sp.teamStatsComparison || {};
+  const hs = sp.halfScoringSplits || {};
+  const comp = sp.completeness || {};
+
+  const compactSideForm = (f) => !f ? null : ({
+    overall: compactFieldVal(f.overall),
+    home: compactFieldVal(f.homeOnly),
+    away: compactFieldVal(f.awayOnly),
+    htWinPct: compactFieldVal(f.htWinPct),
+    ftsPct: compactFieldVal(f.ftsPct),
+    csPct: compactFieldVal(f.csPct),
+  });
+
+  const compactSideStats = (s) => !s ? null : ({
+    mp: compactFieldVal(s.matchesPlayed),
+    winPct: compactFieldVal(s.winPct),
+    gf: compactFieldVal(s.totalGoalsScored),
+    avgFor: compactFieldVal(s.avgGoalsScored),
+    avgForSplit: compactFieldVal(s.avgGoalsScoredHome ?? s.avgGoalsScoredAway),
+    avgAg: compactFieldVal(s.avgGoalsConceded),
+    avgAgSplit: compactFieldVal(s.avgGoalsConcededHome ?? s.avgGoalsConcededAway),
+    bttsPct: compactFieldVal(s.bttsPct),
+    o15Pct: compactFieldVal(s.over15Pct),
+    o25Pct: compactFieldVal(s.over25Pct),
+    htO05Pct: compactFieldVal(s.htOver05Pct),
+    htO15Pct: compactFieldVal(s.htOver15Pct),
+    yellowCards: compactFieldVal(s.yellowCards),
+    totalCards: compactFieldVal(s.totalCards),
+    cornersAvg: compactFieldVal(s.cornersAvg),
+  });
+
+  const compactStanding = (s) => (!s || s.status === 'missing') ? null : ({
+    pos: compactFieldVal(s.position),
+    mp: compactFieldVal(s.matchesPlayed),
+    pts: compactFieldVal(s.points),
+    w: s.wins ?? null,
+    d: s.draws ?? null,
+    l: s.losses ?? null,
+    gf: s.goalsFor ?? null,
+    ga: s.goalsAgainst ?? null,
+  });
+
+  return {
+    completeness: {
+      usable: !!comp.usable,
+      complete: !!comp.complete,
+      retrieved: comp.retrievedCount ?? 0,
+      total: comp.totalChecked ?? 15,
+      missingFields: Array.isArray(comp.missingFields) ? comp.missingFields : [],
+    },
+    winProb: {
+      H: compactFieldVal(wp.homeWinPct),
+      X: compactFieldVal(wp.drawPct),
+      A: compactFieldVal(wp.awayWinPct),
+    },
+    h2h: {
+      status: pm.status || 'not_captured',
+      n: compactFieldVal(pm.totalMeetings),
+      H: compactFieldVal(pm.homeWins),
+      X: compactFieldVal(pm.draws),
+      A: compactFieldVal(pm.awayWins),
+      avgGoals: compactFieldVal(h2h.avgGoals),
+      bttsPct: compactFieldVal(h2h.bttsPct),
+      o15Pct: compactFieldVal(h2h.over15Pct),
+      o25Pct: compactFieldVal(h2h.over25Pct),
+      avgCards: compactFieldVal(h2h.avgTotalCards),
+      avgCorners: compactFieldVal(h2h.avgTotalCorners),
+      cornersSide: {
+        H: compactFieldVal(h2h.cornersPerSide && h2h.cornersPerSide.home),
+        A: compactFieldVal(h2h.cornersPerSide && h2h.cornersPerSide.away),
+      },
+      cardsSide: {
+        H: compactFieldVal(h2h.cardsPerSide && h2h.cardsPerSide.home),
+        A: compactFieldVal(h2h.cardsPerSide && h2h.cardsPerSide.away),
+      },
+      leagueBaseline: {
+        goals: compactFieldVal(h2h.leagueAvgGoals),
+        bttsPct: compactFieldVal(h2h.leagueAvgBttsPct),
+        o15Pct: compactFieldVal(h2h.leagueAvgOver15Pct),
+        o25Pct: compactFieldVal(h2h.leagueAvgOver25Pct),
+        cards: compactFieldVal(h2h.leagueAvgCards),
+        corners: compactFieldVal(h2h.leagueAvgCorners),
+      },
+    },
+    standings: {
+      home: compactStanding(ls.home),
+      away: compactStanding(ls.away),
+    },
+    form: {
+      home: compactSideForm(fm.home),
+      away: compactSideForm(fm.away),
+    },
+    teamStats: {
+      home: compactSideStats(ts.home),
+      away: compactSideStats(ts.away),
+    },
+    halfSplits: hs.available ? {
+      p1HFor: hs.p1HomeFor, p1HAg: hs.p1HomeAgainst,
+      p1AFor: hs.p1AwayFor, p1AAg: hs.p1AwayAgainst,
+      p2HFor: hs.p2HomeFor, p2HAg: hs.p2HomeAgainst,
+      p2AFor: hs.p2AwayFor, p2AAg: hs.p2AwayAgainst,
+    } : null,
+  };
+}
+
+function selectCompactMarketsForPrompt(availableMarkets, maxCount = 45) {
+  const list = Array.isArray(availableMarkets) ? availableMarkets : [];
+  // Keep balanced coverage across all offered approved market families while avoiding bloated longshot lines
+  const filtered = list.filter((m) => m && Number.isFinite(m.odds) && m.odds >= 1.05 && m.odds <= 15);
+  const src = filtered.length >= 6 ? filtered : list;
+  const byFamily = new Map();
+  for (const m of src) {
+    const id = m.approvedMarketId || 'other';
+    if (!byFamily.has(id)) byFamily.set(id, []);
+    byFamily.get(id).push(m);
+  }
+  const picked = [];
+  const cap = Math.max(10, Number(maxCount) || 45);
+  // Round-robin across approved market IDs so every offered market family is represented
+  let round = 0;
+  while (picked.length < cap) {
+    let added = false;
+    for (const arr of byFamily.values()) {
+      if (round < arr.length && picked.length < cap) {
+        const m = arr[round];
+        const entry = {
+          id: m.approvedMarketId,
+          outcome: m.outcome,
+          odds: m.odds,
+        };
+        if (m.line != null) entry.line = m.line;
+        picked.push(entry);
+        added = true;
+      }
+    }
+    if (!added) break;
+    round++;
+  }
+  return picked;
+}
+
+function buildAnalystPrompt(ev, statsPacket, availableMarkets, opts = {}) {
   const sport = String((ev && ev.sport) || 'football').toLowerCase();
   const guide = getKnowledgeGuideForSport(sport);
+  const maxMarkets = Number(opts.maxMarkets) || 45;
+  const compactMarkets = selectCompactMarketsForPrompt(availableMarkets, maxMarkets);
+  const offeredIds = new Set(compactMarkets.map((m) => m.id));
+
+  // Include compact market definitions ONLY for approved markets actually offered on this fixture
   const catalogueSummary = sport === 'football'
-    ? approvedMarkets.listApprovedMarkets().map((m) => ({
-        id: m.id,
-        name: m.name,
-        family: m.marketFamily || 'general',
-        outcomes: m.outcomes,
-        settlement: m.settlementRules,
-      }))
-    : (sportMarkets.SPORT_APPROVED_MARKETS[sport] || []);
+    ? approvedMarkets.listApprovedMarkets()
+        .filter((m) => offeredIds.has(m.id))
+        .map((m) => `${m.id}: ${m.name}`)
+    : (sportMarkets.SPORT_APPROVED_MARKETS[sport] || [])
+        .filter((m) => !offeredIds.size || offeredIds.has(m.id))
+        .map((m) => `${m.id}: ${m.name}`);
 
   const payload = {
-    fixture: statsPacket.matchIdentity,
-    statistics: {
-      headToHeadAverages: statsPacket.headToHeadAverages,
-      winProbability: statsPacket.winProbability,
-      previousMeetings: statsPacket.previousMeetings,
-      leagueStandings: statsPacket.leagueStandings,
-      lastMatchesForm: statsPacket.lastMatchesForm,
-      teamStatsComparison: statsPacket.teamStatsComparison,
-      halfScoringSplits: statsPacket.halfScoringSplits,
-      completeness: statsPacket.completeness,
+    fixture: {
+      matchId: statsPacket.matchIdentity.matchId,
+      sport: statsPacket.matchIdentity.sport,
+      competition: statsPacket.matchIdentity.competition,
+      kickoff: statsPacket.matchIdentity.kickoffIso,
+      home: statsPacket.matchIdentity.homeTeam,
+      away: statsPacket.matchIdentity.awayTeam,
     },
-    availableBookmakerMarkets: availableMarkets.slice(0, 80),
+    stats: compactStatsForPrompt(statsPacket),
+    markets: compactMarkets,
   };
 
   const system = [
     'You are the BetRobot Statistical Analyst AI.',
-    'Analyze the provided fixture using ONLY the supplied statistics and available bookmaker markets.',
-    'NEVER invent statistics, NEVER convert missing values to 0, NEVER fabricate market IDs or odds.',
-    'You MUST return strictly valid JSON matching the required schema and nothing else (no markdown fences).',
+    'Use ONLY the supplied statistics and offered markets. NEVER invent stats, NEVER treat null/missing as 0, NEVER fabricate market IDs/odds.',
+    'Return strictly valid JSON only (no markdown fences).',
     guide,
-    'APPROVED MARKET CATALOGUE FOR THIS SPORT:',
-    JSON.stringify(catalogueSummary),
+    'OFFERED APPROVED MARKETS:',
+    catalogueSummary.join(' | '),
   ].join('\n\n');
 
   const user = [
-    'Analyze this fixture and return strictly valid JSON with the exact keys:',
-    '{',
-    '  "matchId": number|string|null,',
-    '  "homeTeam": string,',
-    '  "awayTeam": string,',
-    '  "competition": string,',
-    '  "kickoff": string|null,',
-    '  "statisticalEvidenceSummary": string,',
-    '  "supportingStatistics": string[],',
-    '  "contradictoryStatistics": string[],',
-    '  "missingInformation": string[],',
-    '  "dataCompletenessAssessment": "complete"|"partial"|"insufficient",',
-    '  "noSelection": boolean,',
-    '  "noSelectionReason": string,',
-    '  "recommendations": [',
-    '    {',
-    '      "rank": 1|2|3,',
-    '      "approvedMarketId": string,',
-    '      "marketName": string,',
-    '      "outcome": string,',
-    '      "canonicalOutcome": string,',
-    '      "line": number|null,',
-    '      "odds": number,',
-    '      "explanation": string,',
-    '      "confidenceAssessment": "high"|"medium"|"low",',
-    '      "evidenceStrength": number',
-    '    }',
-    '  ],',
-    '  "rejectedAlternatives": [{ "market": string, "reason": string }],',
-    '  "requestedMissingFields": string[]',
-    '}',
-    '',
-    'RULES:',
-    '- Return up to 3 ranked recommendations (rank 1 = strongest, rank 2 = second-best alternative, rank 3 = third-best alternative).',
-    '- Every recommendation MUST match an entry in availableBookmakerMarkets (exact approvedMarketId, outcome, line, odds).',
-    '- Avoid ranking highly correlated markets as if they were independent.',
-    '- If evidence is insufficient, contradictory, or no available market is genuinely supported, set "noSelection": true and "recommendations": [].',
-    '',
-    'FIXTURE DATA:',
+    'Analyze this fixture and return strictly valid JSON with exact keys:',
+    '{"matchId":number|string|null,"homeTeam":string,"awayTeam":string,"competition":string,"kickoff":string|null,"statisticalEvidenceSummary":string,"supportingStatistics":string[],"contradictoryStatistics":string[],"missingInformation":string[],"dataCompletenessAssessment":"complete"|"partial"|"insufficient","noSelection":boolean,"noSelectionReason":string,"recommendations":[{"rank":1|2|3,"approvedMarketId":string,"marketName":string,"outcome":string,"canonicalOutcome":string,"line":number|null,"odds":number,"explanation":string,"confidenceAssessment":"high"|"medium"|"low","evidenceStrength":number}],"rejectedAlternatives":[{"market":string,"reason":string}],"requestedMissingFields":string[]}',
+    'RULES: Up to 3 non-correlated ranked recommendations matching entries in `markets` (exact id, outcome, line, odds). If evidence is insufficient/contradictory, set "noSelection":true and "recommendations":[].',
+    'DATA:',
     JSON.stringify(payload),
   ].join('\n');
 
@@ -325,17 +443,29 @@ async function callGroqChat(system, user, opts = {}) {
           { role: 'user', content: user },
         ],
         temperature: 0.2,
-        max_tokens: 1400,
+        max_tokens: 1800,
         response_format: { type: 'json_object' },
       }),
       signal: ctrl.signal,
     });
     if (!res.ok) {
-      if (!opts.useFallback && (res.status === 404 || res.status === 429 || res.status === 503)) {
+      if (res.status === 429) {
+        const retryAfterSec = Math.min(12, Math.max(1, Number(res.headers && res.headers.get && res.headers.get('retry-after')) || 3));
+        if (!opts._rateLimitRetried) {
+          await new Promise((r) => setTimeout(r, retryAfterSec * 1000));
+          return callGroqChat(system, user, { ...opts, _rateLimitRetried: true });
+        }
+        if (!opts.useFallback) {
+          return callGroqChat(system, user, { ...opts, useFallback: true, _rateLimitRetried: false });
+        }
+      }
+      if (!opts.useFallback && (res.status === 404 || res.status === 503)) {
         return callGroqChat(system, user, { ...opts, useFallback: true });
       }
-      const txt = (await res.text().catch(() => '')).slice(0, 200).replace(apiKey, '[REDACTED]');
-      throw new Error(`Groq HTTP ${res.status} (${model}): ${txt}`);
+      const txt = (await res.text().catch(() => '')).slice(0, 240).replace(apiKey, '[REDACTED]');
+      const err = new Error(`Groq HTTP ${res.status} (${model}): ${txt}`);
+      err.httpStatus = res.status;
+      throw err;
     }
     const data = await res.json();
     const content = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
@@ -467,7 +597,7 @@ async function analyzeFixtureWithAi(ev, opts = {}) {
     return analyzeFixtureOfflineFallback(ev, opts.deterministicCandidates || [], statsPacket);
   }
 
-  const { system, user } = buildAnalystPrompt(ev, statsPacket, availableMarkets);
+  let maxMarkets = Number(opts.maxMarkets) || 45;
   let lastErr = '';
   let totalTokens = { prompt: 0, completion: 0, total: 0 };
   let totalMs = 0;
@@ -475,7 +605,8 @@ async function analyzeFixtureWithAi(ev, opts = {}) {
 
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
-      const retryNote = attempt > 1
+      const { system, user } = buildAnalystPrompt(ev, statsPacket, availableMarkets, { maxMarkets });
+      const retryNote = attempt > 1 && lastErr && !/HTTP 413/i.test(lastErr)
         ? `\n\nPREVIOUS OUTPUT WAS INVALID (${lastErr}). Return strictly valid JSON matching the exact schema.`
         : '';
       const resp = await callGroqChat(system, user + retryNote, opts);
@@ -502,6 +633,14 @@ async function analyzeFixtureWithAi(ev, opts = {}) {
       lastErr = val.errors.join('; ');
     } catch (e) {
       lastErr = e.message;
+      // On HTTP 413 (Request Too Large), tighten market slice once on retry rather than repeating the same oversized payload
+      if (e.httpStatus === 413 || /HTTP 413/i.test(String(e.message || ''))) {
+        if (maxMarkets > 20) {
+          maxMarkets = 20;
+        } else {
+          break;
+        }
+      }
     }
   }
 
