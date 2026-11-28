@@ -523,7 +523,15 @@ export async function handleRequest(request, env, ctx, deps = {}) {
     }
     if (sharedUsed.length) {
       const clientUsed = Array.isArray(params.usedSelections) ? params.usedSelections : [];
-      params.usedSelections = [...clientUsed, ...sharedUsed].slice(0, 200);
+      const compactSelection = (s) => ({
+        fixtureId: s && (s.fixtureId || s.matchId) ? Number(s.fixtureId || s.matchId) : 0,
+        home: String((s && s.home) || '').slice(0, 60),
+        away: String((s && s.away) || '').slice(0, 60),
+        approvedMarketId: String((s && (s.approvedMarketId || s.market)) || '').slice(0, 48),
+        canonicalOutcome: String((s && (s.canonicalOutcome || s.outcome)) || '').slice(0, 48),
+        ...(s && s.line != null ? { line: Number(s.line) } : {}),
+      });
+      params.usedSelections = [...clientUsed, ...sharedUsed].slice(0, 120).map(compactSelection);
     }
 
     // Ensure cloud runner does NOT require phone gateway unless explicitly requested

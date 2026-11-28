@@ -1275,6 +1275,10 @@ async function main() {
       let mktCursor = 0;
       const runMarketWorker = async (wIdx) => {
         while (true) {
+          if (cancelRequested) {
+            limitReachedReason = 'cancelled';
+            break;
+          }
           if (gw && (gw.limitReached || !gw.connected)) {
             limitReachedReason = gw.limitReached ? 'data_limit' : 'gateway_disconnected';
             break;
@@ -1433,6 +1437,14 @@ async function main() {
 
     const cands = state._cands || [];
     delete state._cands;
+
+    if (cancelRequested) {
+      tallyRejections(allEvents, cands, state);
+      state.status = 'cancelled';
+      state.stage = 'Cancelled by user.';
+      state.progress = buildProgress('incomplete', 'Research cancelled by user', started, state.counts, allEvents.length, null);
+      return;
+    }
 
     if (gw && gw.limitReached) {
       tallyRejections(allEvents, cands, state);
